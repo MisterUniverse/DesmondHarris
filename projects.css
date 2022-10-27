@@ -1,0 +1,81 @@
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-flow: row wrap;
+    width: 100%;
+    padding: 5px;
+}
+
+.card {
+    flex-direction: column;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    transition: 0.3s;
+    border-radius: 5px;
+    border: 1px solid white;
+    backdrop-filter: blur(14px);
+    background-color: rgba(255, 255, 255, 0.486);
+    width: 400px;
+    height: 350px;
+    padding: 10px;
+    margin: 10px;
+}
+
+img {
+  border-radius: 5px 5px 0 0;
+}
+
+.tech {
+    display: inline;
+}
+
+.js {
+    width:30px;
+}
+
+.py {
+    width: 25px;
+}
+
+.go {
+    width: 50px;
+}
+
+.csharp {
+    width: 45px;
+    position: relative;
+    top: 8px;
+}
+
+.grpc {
+    width: 40px;
+}
+
+.react {
+    width: 35px;
+}
+
+.net {
+    width: 30px;
+}
+
+.tech > p {
+    border-radius: 5px;
+    padding: 1px;
+    border: 1px solid black;
+}
+
+.gopher {
+    width: 6em;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    transform: translateY(90px);
+    transition: transform .5s ease-in-out;
+}
+
+.gopher:hover {
+    transform: translateY(50px);
+}

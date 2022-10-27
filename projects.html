@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+    <!--[if lte 8]><html class="pre-ie9" lang="en"><![endif]-->
+    <!--[if gte IE 9]><!--><html lang="en"><!--<![endif]-->
+    <head>
+        <title>Desmond Harris</title>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta name="description" content="" />
+        <link rel="stylesheet" type="text/css" href="style.css" />
+        <link rel="stylesheet" type="text/css" href="projects.css" />
+        <link rel="icon" href="img/favicon.png">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    </head>
+    <body>
+        <header class="topnav">
+            <a href="#home" class="active"></a>
+            <div id="myLinks" onclick="off()">
+                <a class="text" href="index.html">Home</a>
+                <a class="text" href="projects.html">Work</a>
+                <a class="text" href="about.html">About</a>
+                <a class="text" href="contact.html">Contact</a>
+            </div>
+            <a href="javascript:void(0);" class="icon" onclick="on()">
+                <i class="fa fa-bars"></i>
+            </a>
+        </header>
+        <h1>Stuff I made</h1>
+        <br>
+        <div class="container">
+            <div class="card">
+                <img src="images/Kaguya.png" alt="Avatar" style="width:100%">
+                <div class="card-details">
+                    <h4><b>ViperVision</b></h4> 
+                    <div class="tech">
+                        <img class="csharp" src="images/Csharp.png">
+                        <img class="net" src="images/NET_logo.png">
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <img src="images/Kaguya-Cat.png" alt="Avatar" style="width:100%">
+                <div class="card-details">
+                    <h4><b>Viper Web Viewer</b></h4> 
+                    <div class="tech">
+                        <img class="csharp" src="images/Csharp.png">
+                        <img class="react" src="images/React.png">
+                        <img class="js" src="images/js.png">
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <img src="images/Miku-PoutyFace.jpg" alt="Avatar" style="width:100%">
+                <div class="card-details">
+                    <h4><b>Maxxiene</b></h4>
+                    <div class="tech">
+                        <img class="go" src="images/go-logo.png">
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <img src="images/Sunflower.jpg" alt="Avatar" style="width:100%">
+                <div class="card-details">
+                    <h4><b>Kasguai</b></h4>
+                    <div class="tech">
+                        <img class="go" src="images/go-logo.png">
+                        <img class="py" src="images/Python.png">
+                        <img class="grpc" src="images/grpc-logo.png">
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <img src="images/Yotsuba.jpg" alt="Avatar" style="width:100%">
+                <div class="card-details">
+                    <h4><b>C2</b></h4> 
+                    <div class="tech">
+                        <img class="go" src="images/go-logo.png">
+                    </div>
+                </div>
+            </div>              
+            <div class="card">
+                <img src="images/rem-ram.png" alt="Avatar" style="width:100%">
+                <div class="card-details">
+                    <h4><b>Bots</b></h4> 
+                    <div class="tech">
+                        <img class="go" src="images/go-logo.png">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <img class="gopher" src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/66955/gopher.svg"/>
+        <script>
+            function on() {
+                document.getElementById("myLinks").style.display = "block";
+            }
+
+            function off() {
+                document.getElementById("myLinks").style.display = "none";
+            }
+        </script>
+    </body>
+</html>
