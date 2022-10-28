@@ -47,8 +47,18 @@ footer {
     bottom: 10px;
     width: 99%;
     overflow: hidden;
+    padding: 0.5em;
 }
 
+footer > i {
+    padding-right: 5px;
+}
+
+footer > i:hover {
+    color: #4c0181;
+    font-size: 100px;
+    transform: scale(1.1);
+}
 
 /*
     NAV MENU
@@ -75,11 +85,11 @@ footer {
 }
 
 .topnav a {
-color: white;
-padding: 14px 16px;
-text-decoration: none;
-font-size: xx-large;
-display: block;
+    color: white;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: xx-large;
+    display: block;
 }
 
 .topnav a.icon {
