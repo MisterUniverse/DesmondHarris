@@ -3,5 +3,5 @@
 
 ## TODO:
 
-- [] About page
-- [] Companies I did work for
+- [X] About page
+- [X] Companies I did work for
