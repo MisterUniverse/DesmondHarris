@@ -1,0 +1,23 @@
+.about {
+    margin: 0 auto;
+    text-align: center;
+    width: 75%;
+    font-size: 1.3em;
+}
+
+img {
+    width: 70%;
+}
+
+#photo-gallery {
+    display: flex;
+    font-size: .75em;
+}
+
+.img-container {
+    display: block;
+}
+
+#stepthrough {
+    width: 30%;
+}

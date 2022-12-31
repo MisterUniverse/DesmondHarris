@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+    <!--[if lte 8]><html class="pre-ie9" lang="en"><![endif]-->
+    <!--[if gte IE 9]><!--><html lang="en"><!--<![endif]-->
+    <head>
+        <title>Desmond Harris</title>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta name="description" content="" />
+        <link rel="stylesheet" type="text/css" href="../css/style.css" />
+        <link rel="stylesheet" type="text/css" href="../css/about.css" />
+        <link rel="icon" href="img/favicon.png">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    </head>
+    <body>
+        <header class="topnav">
+            <a href="#home" class="active"><object data="../images/1337.svg" width="60px" height="60px"></object></a>
+            <div id="myLinks" onclick="off()">
+                <a class="text" href="../index.html">Home</a>
+                <a class="text" href="projects.html">Work</a>
+                <a class="text" href="about.html">About</a>
+                <a class="text" href="contact.html">Contact</a>
+            </div>
+            <a href="javascript:void(0);" class="icon" onclick="on()">
+                <i class="fa fa-bars"></i>
+            </a>
+        </header>
+        <div class="about">
+            <p>Hello, I'm Desmond a dev in the Birmingham area.</p>
+            <p>
+                In 2016 I started doing web development primarily in Javascript/React, HTML/CSS, and using tools like Wordpress/Drupal, WiX, etc... 
+                At the start of 2019 I transitioned into industrial automation working primarily in Windows environments using tools such as C#, .Net, and Visual Studio.
+            </p>
+            
+            <p>Along the way I've pick up a few networking skills, learned about some fancy industrial protocols, became a certified thermographer, and dabbled a little in the security space.</p>
+            
+            <p>I've worked with companys such as Teledyne FLIR, Southern Company, Nucor, Mercedes, and many more. Lately I've been writing code in Golang and I love it!
+            </p>
+            <div id="photo-gallery">
+                
+                <div class="img-container">
+                    <img src="../images/walle.jpg" />
+                    <p>Industrial automation can get weird sometimes</p>
+                </div>
+                <div class="img-container">
+                    <img src="../images/ip.jpg" />
+                    <p>Fun at the Con</p>
+                </div>
+                <img id="stepthrough" src="../images/Stepthrough_V22.gif" />
+                <div class="img-container">
+                    <img src="../images/badges.jpg" />
+                    <p>If you were here then we might have touched badges</p>
+                </div>
+                <div class="img-container">
+                    <img src="../images/nerds.jpg" />
+                    <p>Yes! This is a thing. You're welcome</p>
+                </div>
+            </div>
+            <p>Check out my <a href="https://github.com/MisterUniverse" target="_blank">github</a>.</p>
+        </div>
+        <footer>
+            <br>
+            <i class="fa fa-github" style="font-size:48px"></i>
+            <i class="fa fa-linkedin-square" style="font-size:48px"></i>
+            <i class="fa fa-codepen" style="font-size:48px"></i>
+            <i class="fa fa-youtube-play" style="font-size:48px"></i>
+            <i class="fa-brands fa-patreon" style="font-size:48px"></i>
+            <i class="fa fa-stack-overflow" style="font-size:48px"></i>
+        </footer>
+        <script>
+            function on() {
+                document.getElementById("myLinks").style.display = "block";
+            }
+
+            function off() {
+                document.getElementById("myLinks").style.display = "none";
+            }
+        </script>
+    </body>
+</html>
