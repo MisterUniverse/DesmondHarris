@@ -4,10 +4,11 @@
     <head>
         <title>Desmond Harris</title>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <meta name="description" content="" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description"
+          content="CSS Media Query for all devices
+                       like mobile, tablet, desktop etc.">
         <link rel="stylesheet" type="text/css" href="css/style.css" />
-        <link rel="stylesheet" type="text/css" href="css/cauldron.css" />
         <link rel="stylesheet" type="text/css" href="css/terminal.css" />
         <link rel="icon" href="img/favicon.png">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -25,61 +26,36 @@
                 <i class="fa fa-bars"></i>
             </a>
         </header>
-        <div>
-            
-            <h1>Desmond Harris</h1>
-            <h2>Conjurour of Magic and Tinkerer of the Dark Arts</h2>
-            
-            <div id="skills">
-                <div id="terminal">
-                    <div class=fakeMenu>
-                        <div class="fakeButtons fakeClose"></div>
-                        <div class="fakeButtons fakeMinimize"></div>
-                        <div class="fakeButtons fakeZoom"></div>
-                    </div>
-                    <div class="fakeScreen">
-                        <p class="line1">&#91;&nbsp;&ldquo;cat secret.txt | echo >> readme.me &rdquo;,<span class="cursor1">_</span></p>
-                        <p class="line2">&nbsp;&nbsp;&ldquo;lorem ipsom.&rdquo;,<span class="cursor2">_</span></p>
-                        <p class="line3">&nbsp;&nbsp;&ldquo;Hello, World!&rdquo;&nbsp;&#93;<span class="cursor3">_</span></p>
-                        <p class="line4">><span class="cursor4">_</span></p>
-                    </div>
-                </div>
-                <div class="group">
-                    <div class="cauldron">
-                      <div class="shade"></div>
-                    </div>
-                    <div class="legs">
-                        <img src="images/js.png" width="40px" height="40px" alt="">
-                    </div>
-                    <div class="rim"></div>
-                    <div class="bubbles">
-                        <img src="images/Tux.png" width="40px" height="40px" alt="">
-                    </div>
-                    <div class="broom">
-                        <img src="images/Csharp.png"  width="40px" height="40px"alt="">
-                    </div>
-                    <div class="shadow"></div>
-                </div>
-                <img class="floating" src="images/bash.png" width="40px" height="40px"alt="">
-                
-                <div class="wiz">
-                    <img class="floating" src="images/React.png" width="5%">
-                    <img class="floating2" src="images/mage.png">
-                    <img class="floating" src="images/PowerShell.png" width="5%">
-                </div>
-                <img class="floating" src="images/Python.png" width="40px" height="40px">
+        <div class="wrapper">
+            <div class="head">
+                <h1>Desmond Harris</h1>
+                <h2>Conjuror of Magic and Tinkerer of the Dark Arts</h2>
             </div>
+            <div class="left">
+                <img class="floating-gopher" src="images/mage.png" onclick="swim(this);"/>
+            </div>
+            <div class="skills">
+                <img class="floating5" src="images/js.png" alt=""/>
+                <img class="floating6" src="images/Tux.png" alt=""/>
+                <img class="floating7" src="images/Csharp.png" alt=""/>
+                <img class="floating1" src="images/bash.png" alt=""/>
+                <img class="floating2" src="images/React.png" alt=""/>
+                <img class="floating3" src="images/PowerShell.png" alt=""/>
+                <img class="floating4" src="images/Python.png" alt=""/> 
+            </div>
+            <div class="right">
+                <img class="floating-gopher" src="images/gray_mage.png" onclick="swim(this);"/>
+            </div>
+            <footer class="foot">
+                <br>
+                <i class="fa fa-github" style="font-size:xx-large"></i>
+                <i class="fa fa-linkedin-square" style="font-size:xx-large"></i>
+                <i class="fa fa-codepen" style="font-size:xx-large"></i>
+                <!-- <i class="fa fa-youtube-play" style="font-size:48px"></i>
+                <i class="fa-brands fa-patreon" style="font-size:48px"></i> -->
+                <i class="fa fa-stack-overflow" style="font-size:xx-large"></i>
+            </footer>
         </div>
-        
-        <footer>
-            <br>
-            <i class="fa fa-github" style="font-size:48px"></i>
-            <i class="fa fa-linkedin-square" style="font-size:48px"></i>
-            <i class="fa fa-codepen" style="font-size:48px"></i>
-            <i class="fa fa-youtube-play" style="font-size:48px"></i>
-            <i class="fa-brands fa-patreon" style="font-size:48px"></i>
-            <i class="fa fa-stack-overflow" style="font-size:48px"></i>
-        </footer>
         <script>
             function on() {
                 document.getElementById("myLinks").style.display = "block";
@@ -88,6 +64,18 @@
             function off() {
                 document.getElementById("myLinks").style.display = "none";
             }
+                                 
+            function swim(img) { // function expression closure to contain variables
+                img.src = "images/canny.png"
+                var i = 0;
+                var pics = ["images/mage.png", "images/gray_mage.png", "images/canny.png", "images/erode.png", "images/dilate.png"];
+                var el = img; // el doesn't change
+                function toggle() {
+                    el.src = pics[i]; // set the image
+                    i = (i + 1) % pics.length; // update the counter
+                }
+                setInterval(toggle, 2000);
+            };
         </script>
     </body>
 </html>

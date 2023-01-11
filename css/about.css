@@ -5,19 +5,25 @@
     font-size: 1.3em;
 }
 
-img {
-    width: 70%;
+.photo {
+    width: 75%;
 }
 
 #photo-gallery {
     display: flex;
     font-size: .75em;
+    width: 100%;
+    margin: 0 auto;
+    padding-top: 5%;
 }
 
 .img-container {
+    margin: 0 auto;
+    padding: 0;
     display: block;
+    width: 100%;
 }
 
 #stepthrough {
-    width: 30%;
+    width: 100%;
 }
