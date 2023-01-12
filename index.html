@@ -29,7 +29,7 @@
                 <h2>Conjuror of Magic and Tinkerer of the Dark Arts</h2>
             </div>
             <div class="left">
-                <img class="floating-gopher" src="images/mage.png" onclick="swim(this);"/>
+                <img id="left-gopher" class="floating-gopher" src="images/mage.png" onclick="swim(this);"/>
             </div>
             <div class="skills">
                 <img class="floating1" src="images/bash.png" alt=""/>
@@ -44,7 +44,7 @@
                 <img class="floating10" src="images/NET_logo.png" alt=""/>
             </div>
             <div class="right">
-                <img class="floating-gopher" src="images/gray_mage.png" onclick="swim(this);"/>
+                <img id="right-gopher" class="floating-gopher" src="images/gray_mage.png" onclick="swim(this);"/>
             </div>
             <footer class="foot">
                 <br>
@@ -55,6 +55,31 @@
             </footer>
         </div>
         <script>
+            window.onload = (event) => {
+                var img = document.getElementById("left-gopher");
+                var i = 0;
+                var pics = ["images/mage.png", "images/gray_mage.png", "images/canny.png", "images/erode.png", "images/dilate.png"];
+                var el = img; // el doesn't change
+                function toggle() {
+                    el.src = pics[i]; // set the image
+                    i = (i + 1) % pics.length; // update the counter
+                }
+                flip(event)
+                setInterval(toggle, 1500);
+            };
+
+            function flip (event) {
+                var img2 = document.getElementById("right-gopher");
+                var i = 0;
+                var pics = ["images/mage.png", "images/gray_mage.png", "images/canny.png", "images/erode.png", "images/dilate.png"];
+                var el2 = img2;
+                function toggle() {
+                    el2.src = pics[i]; // set the image
+                    i = (i + 1) % pics.length; // update the counter
+                }
+                setInterval(toggle, 1800);
+            };
+
             function on() {
                 document.getElementById("myLinks").style.display = "block";
             }
@@ -64,15 +89,7 @@
             }
                                  
             function swim(img) { // function expression closure to contain variables
-                img.src = "images/canny.png"
-                var i = 0;
-                var pics = ["images/mage.png", "images/gray_mage.png", "images/canny.png", "images/erode.png", "images/dilate.png"];
-                var el = img; // el doesn't change
-                function toggle() {
-                    el.src = pics[i]; // set the image
-                    i = (i + 1) % pics.length; // update the counter
-                }
-                setInterval(toggle, 2000);
+                
             };
         </script>
     </body>
