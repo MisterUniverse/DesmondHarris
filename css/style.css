@@ -183,12 +183,92 @@ color: white;
     animation: floating 8.5s linear infinite;
 }
 
+.floating8 {
+    width: 2%;
+    position:absolute;
+    top:100px; bottom:100px; left:100px;right:100px;
+    overflow:hidden;
+    margin: auto;
+    animation: floating 9s linear infinite;
+}
+
+.floating9 {
+    width: 2%;
+    position:absolute;
+    top:100px; bottom:100px; left:100px;right:100px;
+    overflow:hidden;
+    margin: auto;
+    animation: floating 9.5s linear infinite;
+}
+
+.floating10 {
+    width: 2%;
+    position:absolute;
+    top:100px; bottom:100px; left:100px;right:100px;
+    overflow:hidden;
+    margin: auto;
+    animation: floating 10s linear infinite;
+}
+
 .floating-gopher { 
     max-width: 100%;
     animation-name: wizard;
     animation-duration: 3s;
     animation-iteration-count: infinite;
     animation-timing-function: ease-in-out;
+}
+
+.social {
+    text-decoration: none;
+    color: white;
+}
+
+.social:visited {
+    text-decoration: none;
+    color: white;
+}
+
+@media only screen and (max-width: 600px) {
+    .floating1 {
+        width: 10%;
+    }
+    
+    .floating2 {
+        width: 10%;
+    }
+    
+    .floating3 {
+        width: 10%;
+    }
+    
+    .floating4 {
+        width: 10%;
+    }
+    
+    .floating5 {
+        width: 10%;
+      }
+      
+    .floating6 {
+        width: 10%;
+    }
+      
+    .floating7 {
+        width: 10%;
+    }
+
+    .floating8 {
+        width: 10%;
+    }
+
+    .floating9 {
+        width: 10%;
+    }
+    
+    .floating10 {
+        width: 10%;
+    }
+
 }
 
 @keyframes wizard {

@@ -6,118 +6,111 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1.0" />
         <meta name="description" content="" />
-        <!-- <link rel="stylesheet" type="text/css" href="../css/style.css" /> -->
+        <link rel="stylesheet" href="../css/flickity.css" media="screen">
         <link rel="stylesheet" type="text/css" href="../css/projects.css" />
         <link rel="icon" href="img/favicon.png">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     </head>
     <body>
-        <header class="topnav">
-            <a href="#home" class="active"><object data="../images/1337.svg" width="60px" height="60px"></object></a>
-            <div id="myLinks" onclick="off()">
-                <a class="text" href="../index.html">Home</a>
-                <a class="text" href="projects.html">Work</a>
-                <a class="text" href="about.html">About</a>
-                <a class="text" href="contact.html">Contact</a>
-            </div>
-            <a href="javascript:void(0);" class="icon" onclick="on()">
-                <i class="fa fa-bars"></i>
-            </a>
-        </header>
-        <h1>Projects</h1>
-        <br>
-        <div class="container carousel" aria-label="carousel" Tabindex="0">
-            <div class="slides">
-                <div class="card slides-item slide-1" id="slide-1" aria-label="slide 1 of 5" tabindex="0">
-                    <a href="https://viperimaging.com/products/vipervision-software/" target="_blank">
-                        <img class="round" src="../images/vv1.jpg" alt="Avatar" height="70%"/>
-                        <div class="card-details">
-                            <h4><b>ViperVision</b></h4>
-                            <div class="tech">
-                                <img class="csharp" src="../images/Csharp.png">
-                                <img class="net" src="../images/NET_logo.png">
-                            </div>
-                        </div>
-                    </a>
+        <div class="wrapper">
+            <header class="topnav">
+                <a href="#home" class="active"><object data="../images/1337.svg" width="60px" height="60px"></object></a>
+                <div id="myLinks" onclick="off()">
+                    <a class="text" href="../index.html">Home</a>
+                    <a class="text" href="projects.html">Work</a>
+                    <a class="text" href="about.html">About</a>
+                    <a class="text" href="contact.html">Contact</a>
                 </div>
-                
-                <div class="card slides-item slide-2" id="slide-2">
-                    <a href="https://viperimaging.com/products/vipervision-software/" target="_blank">
-                        <img class="round" src="../images/vv.jpg" alt="Avatar" height="70%"/>
-                        <div class="card-details">
-                            <h4><b>Viper Web Viewer</b></h4>
-                            <div class="tech">
-                                <img class="csharp" src="../images/Csharp.png">
-                                <img class="react" src="../images/React.png">
-                                <img class="js" src="../images/js.png">
-                                <img class="net" src="../images/NET_logo.png">
+                <a href="javascript:void(0);" class="icon" onclick="on()">
+                    <i class="fa fa-bars"></i>
+                </a>
+            </header>
+            <h1>Projects</h1>
+            <br>
+            <div class="main-gallery js-flickity slides" data-flickity-options='{ "cellAlign": "left", "contain": true }'>
+                    <div class="card gallery-cell">
+                        <a href="https://viperimaging.com/products/vipervision-software/" target="_blank">
+                            <img class="round" src="../images/vv1.jpg" alt="Avatar" height="70%"/>
+                            <div class="card-details">
+                                <h4><b>ViperVision</b></h4>
+                                <div class="tech">
+                                    <img class="csharp" src="../images/Csharp.png">
+                                    <img class="net" src="../images/NET_logo.png">
+                                </div>
                             </div>
-                        </div>
-                    </a>
+                        </a>
+                    </div>
+                    
+                    <div class="card gallery-cell">
+                        <a href="https://viperimaging.com/products/vipervision-software/" target="_blank">
+                            <img class="round" src="../images/vv.jpg" alt="Avatar" height="70%"/>
+                            <div class="card-details">
+                                <h4><b>Viper Web Viewer</b></h4>
+                                <div class="tech">
+                                    <img class="csharp" src="../images/Csharp.png">
+                                    <img class="react" src="../images/React.png">
+                                    <img class="js" src="../images/js.png">
+                                    <img class="net" src="../images/NET_logo.png">
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="card gallery-cell">
+                        <a href="https://github.com/MisterUniverse/Maxxiene" target="_blank">
+                            <img class="round" src="../images/Miku-PoutyFace.jpg" alt="Avatar" height="70%"/>
+                            <div class="card-details">
+                                <h4><b>Maxxiene</b></h4>
+                                <br>
+                                <div class="tech">
+                                    <img class="go" src="../images/go-logo.png">
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="card gallery-cell">
+                        <a href="https://github.com/deni336/Dashboard" target="_blank">
+                            <img class="round" src="../images/Yotsuba.jpg" alt="Avatar" height="70%"/>
+                            <div class="card-details">
+                                <h4><b>Kasugai</b></h4>
+                                <br>
+                                <div class="tech">
+                                    <img class="go" src="../images/go-logo.png">
+                                    <img class="py" src="../images/Python.png">
+                                    <img class="grpc" src="../images/grpc-logo.png">
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="card gallery-cell">
+                        <a href="https://github.com/MisterUniverse" target="_blank">
+                            <img class="round" src="../images/cnc.jpg" alt="Avatar" height="70%"/>
+                            <div class="card-details">
+                                <h4><b>C2</b></h4>
+                                <br>
+                                <div class="tech">
+                                    <img class="go" src="../images/go-logo.png">
+                                </div>
+                            </div>
+                        </a>
+                    </div>  
+                    <div class="card gallery-cell">
+                        <a href="https://github.com/MisterUniverse" target="_blank">
+                            <img class="round" src="../images/wowbot_targets.jpg" alt="Avatar" height="70%"/>
+                            <div class="card-details">
+                                <h4><b>PUMPER</b></h4>
+                                <div class="tech">
+                                    <img class="go" src="../images/go-logo.png">
+                                    <img class="py" src="../images/Python.png">
+                                    <img class="csharp" src="../images/Csharp.png">
+                                    <img class="net" src="../images/NET_logo.png">
+                                </div>
+                            </div>
+                        </a>
+                    </div>
                 </div>
-                <div class="card slides-item slide-3" id="slide-3">
-                    <a href="https://github.com/MisterUniverse" target="_blank">
-                        <img class="round" src="../images/Miku-PoutyFace.jpg" alt="Avatar" height="70%"/>
-                        <div class="card-details">
-                            <h4><b>Maxxiene</b></h4>
-                            <br>
-                            <div class="tech">
-                                <img class="go" src="../images/go-logo.png">
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="card slides-item slide-4" id="slide-4">
-                    <a href="https://github.com/MisterUniverse" target="_blank">
-                        <img class="round" src="../images/Yotsuba.jpg" alt="Avatar" height="70%"/>
-                        <div class="card-details">
-                            <h4><b>Kasugai</b></h4>
-                            <br>
-                            <div class="tech">
-                                <img class="go" src="../images/go-logo.png">
-                                <img class="py" src="../images/Python.png">
-                                <img class="grpc" src="../images/grpc-logo.png">
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="card slides-item slide-5" id="slide-5">
-                    <a href="https://github.com/MisterUniverse" target="_blank">
-                        <img class="round" src="../images/cnc.jpg" alt="Avatar" height="70%"/>
-                        <div class="card-details">
-                            <h4><b>C2</b></h4>
-                            <br>
-                            <div class="tech">
-                                <img class="go" src="../images/go-logo.png">
-                            </div>
-                        </div>
-                    </a>
-                </div>  
-                <div class="card slides-item slide-6" id="slide-6">
-                    <a href="https://github.com/MisterUniverse" target="_blank">
-                        <img class="round" src="../images/wowbot_targets.jpg" alt="Avatar" height="70%"/>
-                        <div class="card-details">
-                            <h4><b>PUMPER</b></h4>
-                            <div class="tech">
-                                <img class="go" src="../images/go-logo.png">
-                                <img class="py" src="../images/Python.png">
-                                <img class="csharp" src="../images/Csharp.png">
-                                <img class="net" src="../images/NET_logo.png">
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-            <div class="carousel__nav">
-                <a class="slider-nav" href="#slide-1" aria-label="Go to slide 1">1</a>
-                <a class="slider-nav" href="#slide-2" aria-label="Go to slide 2">2</a>
-                <a class="slider-nav" href="#slide-3" aria-label="Go to slide 3">3</a>
-                <a class="slider-nav" href="#slide-4" aria-label="Go to slide 4">4</a>
-                <a class="slider-nav" href="#slide-5" aria-label="Go to slide 5">5</a>
-                <a class="slider-nav" href="#slide-6" aria-label="Go to slide 6">6</a>
-            </div>
+            <img class="gopher" src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/66955/gopher.svg"/>
         </div>
-        <img class="gopher" src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/66955/gopher.svg"/>
+        <script src="../js/flickity.pkgd.min.js"></script>
         <script>
             function on() {
                 document.getElementById("myLinks").style.display = "block";
