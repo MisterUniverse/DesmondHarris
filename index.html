@@ -1,96 +1,58 @@
 <!DOCTYPE html>
-    <!--[if lte 8]><html class="pre-ie9" lang="en"><![endif]-->
-    <!--[if gte IE 9]><!--><html lang="en"><!--<![endif]-->
-    <head>
-        <title>Desmond Harris</title>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" type="text/css" href="css/style.css" />
-        <link rel="stylesheet" type="text/css" href="css/terminal.css" />
-        <link rel="icon" href="img/favicon.png">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    </head>
-    <body>
-        <header class="topnav">
-            <a href="#home" class="active"><object data="images/1337.svg" width="60px" height="60px"></object></a>
-            <div id="myLinks" onclick="off()">
-                <a class="text" href="index.html">Home</a>
-                <a class="text" href="pages/projects.html">Work</a>
-                <a class="text" href="pages/about.html">About</a>
-                <a class="text" href="pages/contact.html">Contact</a>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Home</title>
+    <link rel="stylesheet" href="css/styles.css" type="text/css" />
+</head>
+<body>
+    <div class="desktop">
+        <div class="window">
+            <div class="content">
+                <span>user@arch:~$ neofetch</span><br>
+                <pre>
+                  -`
+                .o+`                 ----------------
+                `ooo/                 OS: Arch Linux x86_64
+               `+oooo:                Kernel: 5.12.9-arch1-1
+              `+oooooo:               Uptime: 1 day, 2 hours, 37 mins
+              -+oooooo+:              Packages: 1032 (pacman), 22 (flatpak)
+            `/:-:++oooo+:             Shell: zsh 5.8
+           `/++++/+++++++:            DE: Plasma
+          `/++++++++++++++:           WM: i3
+         `/+++ooooooooooooo/`         Theme: Breeze Dark [Plasma], Breeze [GTK2/3]
+        ./ooosssso++osssssso+`        Icons: breeze [Plasma], breeze [GTK2/3]
+       .oossssso-````/ossssss+`       Terminal: konsole
+      -osssssso.      :ssssssso.      CPU: AMD Ryzen 9 5900X (24) @ 4.800GHz
+     :osssssss/        osssso+++.     GPU: AMD Radeon VII
+    /ossssssss/        +ssssooo/-     Memory: 2455MiB / 32768MiB
+   `/ossssso+/:-        -:/+osssso+-
+  `+sso+:-`                 `.-/+oso
+  `++:.                           `-/+/
+.`                                 `/
+                </pre>
+                <span>user@arch:~$ cat aboutme.txt</span><br>
+                <span>=================================</span><br>
+                <span>About Me</span><br>
+                <span>=================================</span><br>
+                <span>Hello, my name is Desmond</span><br>
+                <span></span><br>
+                <span>I work in IT and I am passionate about Free Open Source Software.</span><br>
+                <span></span><br>
+                <span>Check out my work: <a href="projects.html">[Projects]</a></span><br>
+                <span>Stuff I'm in to: <a href="blog.html">[Blog]</a></span><br>
+                <span></span><br>
+                <span>You can reach me @ [XXXXXXXXXX]</span><br>
+                <div id="inputLine">
+                    <span>user@arch:~$ &gt; </span><span id="inputText"></span><div id="cursor"></div>
+                </div>
             </div>
-            <a href="javascript:void(0);" class="icon" onclick="on()">
-                <i class="fa fa-bars"></i>
-            </a>
-        </header>
-        <div class="wrapper">
-            <div class="head">
-                <h1>Desmond Harris</h1>
-                <h2>Conjuror of Magic and Tinkerer of the Dark Arts</h2>
-            </div>
-            <div class="left">
-                <img id="left-gopher" class="floating-gopher" src="images/mage.png" onclick="swim(this);"/>
-            </div>
-            <div class="skills">
-                <img class="floating1" src="images/bash.png" alt=""/>
-                <img class="floating2" src="images/React.png" alt=""/>
-                <img class="floating3" src="images/PowerShell.png" alt=""/>
-                <img class="floating4" src="images/Python.png" alt=""/> 
-                <img class="floating5" src="images/js.png" alt=""/>
-                <img class="floating6" src="images/CSS3_logo.png" alt=""/>
-                <img class="floating7" src="images/HTML5_logo.png" alt=""/>
-                <img class="floating8" src="images/Tux.png" alt=""/>
-                <img class="floating9" src="images/Csharp.png" alt=""/>
-                <img class="floating10" src="images/NET_logo.png" alt=""/>
-            </div>
-            <div class="right">
-                <img id="right-gopher" class="floating-gopher" src="images/gray_mage.png" onclick="swim(this);"/>
-            </div>
-            <footer class="foot">
-                <br>
-                <a class="social" href="https://github.com/MisterUniverse" target="_blank"><i class="fa fa-github" style="font-size:48px"></i></a>
-                <a class="social" href="https://www.linkedin.com/in/desmond-harris" target="_blank"><i class="fa fa-linkedin-square" style="font-size:48px"></i></a>
-                <a class="social" href="https://codepen.io/MisterUniverse" target="_blank"><i class="fa fa-codepen" style="font-size:48px"></i></a>
-                <a class="social" href="https://stackoverflow.com/users/10548525/desmond-harris" target="_blank"><i class="fa fa-stack-overflow" style="font-size:48px"></i></a>
-            </footer>
         </div>
-        <script>
-            window.onload = (event) => {
-                var img = document.getElementById("left-gopher");
-                var i = 0;
-                var pics = ["images/mage.png", "images/gray_mage.png", "images/canny.png", "images/erode.png", "images/dilate.png"];
-                var el = img; // el doesn't change
-                function toggle() {
-                    el.src = pics[i]; // set the image
-                    i = (i + 1) % pics.length; // update the counter
-                }
-                flip(event)
-                setInterval(toggle, 1200);
-            };
-
-            function flip (event) {
-                var img2 = document.getElementById("right-gopher");
-                var i = 0;
-                var pics = ["images/mage.png", "images/gray_mage.png", "images/canny.png", "images/erode.png", "images/dilate.png"];
-                var el2 = img2;
-                function toggle() {
-                    el2.src = pics[i]; // set the image
-                    i = (i + 1) % pics.length; // update the counter
-                }
-                setInterval(toggle, 1300);
-            };
-
-            function on() {
-                document.getElementById("myLinks").style.display = "block";
-            }
-
-            function off() {
-                document.getElementById("myLinks").style.display = "none";
-            }
-                                 
-            function swim(img) { // function expression closure to contain variables
-                
-            };
-        </script>
-    </body>
+    </div>
+    <footer>
+       <p class="footer"><a class="copyright" href="uncopyright.html">Uncopyrighted</a> free to use and reuse.</p> 
+    </footer>
+</body>
 </html>
