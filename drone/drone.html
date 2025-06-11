@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aceix</title>
+  <style>
+    /* Basic styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #1c1c1c;
+      color: #e0e0e0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background-color: #2a2a2a;
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    header h1 {
+      color: #00d4ff;
+      font-size: 1.3rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    footer {
+      background-color: #2a2a2a;
+      padding: 0.4rem;
+      text-align: center;
+      font-size: 0.75rem;
+    }
+
+    button {
+      background-color: #2a2a2a;
+      color: #e0e0e0;
+      border: 1px solid #00d4ff;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      font-size: 0.9rem;
+    }
+
+    button:hover {
+      background-color: #00a3cc;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    /* Simple layout - just video feed and controls */
+    .main-content {
+      flex: 1;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    /* Video feed */
+    .video-container {
+      position: relative;
+      background-color: #000;
+      border-radius: 6px;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    .video-feed {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Flight controls */
+    .control-panel {
+      background-color: #252525;
+      border-radius: 6px;
+      padding: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .joystick-controls {
+      display: flex;
+      gap: 1rem;
+      flex: 1;
+    }
+
+    .joystick {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      background-color: #1c1c1c;
+      border-radius: 50%;
+      padding: 4px;
+      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+    }
+
+    .joystick-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background-color: #2a2a2a;
+      border-radius: 50%;
+      box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.5);
+    }
+
+    .joystick-handle {
+      width: 40%;
+      height: 40%;
+      background-color: #00d4ff;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .joystick-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .joystick-label {
+      color: #a0a0a0;
+      margin-top: 0.25rem;
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    .flight-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .action-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-weight: 500;
+      min-width: 110px;
+    }
+
+    .action-button.danger {
+      border-color: #ff4d4d;
+      color: #ff4d4d;
+    }
+
+    .action-button.danger:hover {
+      background-color: rgba(255, 77, 77, 0.2);
+    }
+
+    /* Overlay on video feed */
+    .feed-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 0.5rem;
+      pointer-events: none;
+    }
+
+    .feed-info {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .feed-metrics {
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+
+    .feed-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .feed-status {
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #00d4ff;
+    }
+
+    .feed-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .feed-button {
+      background-color: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    .feed-button:hover {
+      background-color: rgba(0, 0, 0, 0.8);
+      border-color: #00d4ff;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background-color: #252525;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid #333;
+    }
+
+    .sidebar-header {
+      padding: 0.75rem;
+      background-color: #2a2a2a;
+      border-bottom: 1px solid #333;
+    }
+
+    .sidebar-header h2 {
+      color: #00d4ff;
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .sidebar-section {
+      background-color: #2a2a2a;
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .section-header {
+      color: #00d4ff;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #3a3a3a;
+    }
+
+    /* Status indicators */
+    .status-items {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .status-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .status-label {
+      display: flex;
+      justify-content: space-between;
+      color: #a0a0a0;
+      font-size: 0.8rem;
+    }
+
+    .status-bar-container {
+      width: 100%;
+      height: 6px;
+      background-color: #3a3a3a;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .status-bar {
+      height: 100%;
+      background-color: #00d4ff;
+      border-radius: 3px;
+    }
+
+    .status-bar.warning {
+      background-color: #ffaa00;
+    }
+
+    .status-bar.danger {
+      background-color: #ff4d4d;
+    }
+
+    /* Telemetry values */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+
+    .telemetry-item {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #333;
+      padding-bottom: 5px;
+    }
+
+    .telemetry-label {
+      color: #a0a0a0;
+      font-size: 0.85rem;
+    }
+
+    .telemetry-value {
+      font-family: monospace;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+
+    .telemetry-value.warning {
+      color: #ffaa00;
+    }
+
+    .telemetry-value.danger {
+      color: #ff4d4d;
+    }
+
+    /* Settings section */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .setting-label {
+      font-size: 0.85rem;
+    }
+
+    .mode-select {
+      background-color: #1c1c1c;
+      color: #e0e0e0;
+      border: 1px solid #555;
+      padding: 0.3rem;
+      border-radius: 4px;
+      width: 150px;
+      outline: none;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    /* Map section */
+    .map-container {
+      background-color: #333;
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+      height: 150px;
+      background-image: radial-gradient(#3a3a3a 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    .drone-marker {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background-color: #00d4ff;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 2px solid white;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    }
+
+    .home-marker {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: #ff4d4d;
+      border-radius: 50%;
+      bottom: 30%;
+      left: 40%;
+      transform: translate(-50%, -50%);
+      border: 1px solid white;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+      .sidebar {
+        width: 250px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      main {
+        flex-direction: column;
+      }
+      
+      .sidebar {
+        width: 100%;
+        height: 200px;
+        border-left: none;
+        border-top: 1px solid #333;
+      }
+      
+      .control-panel {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .joystick-controls {
+        justify-content: center;
+      }
+      
+      .flight-actions {
+        flex-direction: row;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="app-title">Aceix</h1>
+    <div class="controls">
+      <button id="connect-drone">Connect Drone</button>
+      <button id="settings-btn">Settings</button>
+    </div>
+  </header>
+  
+  <main>
+    <div class="main-content">
+      <!-- Video Feed -->
+      <div class="video-container">
+        <img class="video-feed" id="drone-feed" src="https://picsum.photos/seed/drone/1280/720" alt="Drone Camera Feed">
+        <div class="feed-overlay">
+          <div class="feed-controls">
+            <div class="feed-status">
+              <div class="status-indicator"></div>
+              <span>Live</span>
+            </div>
+            <div class="feed-actions">
+              <button class="feed-button" id="record-btn" title="Start/Stop Recording">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <circle cx="12" cy="12" r="4" fill="currentColor" />
+                </svg>
+              </button>
+              <button class="feed-button" id="photo-btn" title="Take Photo">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="6" width="20" height="12" rx="2" />
+                  <circle cx="12" cy="12" r="4" />
+                </svg>
+              </button>
+              <button class="feed-button" id="zoom-btn" title="Zoom">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  <line x1="11" y1="8" x2="11" y2="14" />
+                  <line x1="8" y1="11" x2="14" y2="11" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="feed-info">
+            <div class="feed-metrics">Alt: 45m | Speed: 12km/h</div>
+            <div class="feed-metrics">Signal: 85% | GPS: 14 sat</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Flight Controls Panel -->
+      <div class="control-panel">
+        <div class="joystick-controls">
+          <div class="joystick-group">
+            <div class="joystick" id="left-joystick">
+              <div class="joystick-inner">
+                <div class="joystick-handle" id="left-handle"></div>
+              </div>
+            </div>
+            <div class="joystick-label">Throttle & Yaw</div>
+          </div>
+          
+          <div class="joystick-group">
+            <div class="joystick" id="right-joystick">
+              <div class="joystick-inner">
+                <div class="joystick-handle" id="right-handle"></div>
+              </div>
+            </div>
+            <div class="joystick-label">Pitch & Roll</div>
+          </div>
+        </div>
+        
+        <div class="flight-actions">
+          <button class="action-button" id="takeoff-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
+            Take Off
+          </button>
+          
+          <button class="action-button danger" id="land-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12l7 7 7-7" />
+            </svg>
+            Land
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sidebar for additional controls and info -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>Drone Control</h2>
+      </div>
+      
+      <div class="sidebar-content">
+        <!-- Flight Mode -->
+        <div class="sidebar-section">
+          <h3 class="section-header">Flight Mode</h3>
+          <div class="setting-row">
+            <span class="setting-label">Current Mode:</span>
+            <select class="mode-select" id="flight-mode">
+              <option value="manual">Manual Flight</option>
+              <option value="follow">Follow Me</option>
+              <option value="orbit">Orbit Mode</option>
+              <option value="waypoint">Waypoint Mission</option>
+              <option value="return">Return to Home</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <button class="action-button danger" id="emergency-btn" style="width: 100%">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              Emergency Stop
+            </button>
+          </div>
+        </div>
+        
+        <!-- Status Indicators -->
+        <div class="sidebar-section">
+          <h3 class="section-header">Status</h3>
+          <div class="status-items">
+            <div class="status-item">
+              <div class="status-label">
+                <span>Battery</span>
+                <span>76%</span>
+              </div>
+              <div class="status-bar-container">
+                <div class="status-bar" style="width: 76%;"></div>
+              </div>
+            </div>
+            
+            <div class="status-item">
+              <div class="status-label">
+                <span>Signal</span>
+                <span>85%</span>
+              </div>
+              <div class="status-bar-container">
+                <div class="status-bar" style="width: 85%;"></div>
+              </div>
+            </div>
+            
+            <div class="status-item">
+              <div class="status-label">
+                <span>GPS</span>
+                <span>14 sat</span>
+              </div>
+              <div class="status-bar-container">
+                <div class="status-bar" style="width: 95%;"></div>
+              </div>
+            </div>
+            
+            <div class="status-item">
+              <div class="status-label">
+                <span>Storage</span>
+                <span>23%</span>
+              </div>
+              <div class="status-bar-container">
+                <div class="status-bar warning" style="width: 23%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Map View -->
+        <div class="sidebar-section">
+          <h3 class="section-header">Location</h3>
+          <div class="map-container">
+            <div class="drone-marker"></div>
+            <div class="home-marker"></div>
+          </div>
+        </div>
+        
+        <!-- Telemetry -->
+        <div class="sidebar-section">
+          <h3 class="section-header">Telemetry</h3>
+          <div class="telemetry-grid">
+            <div class="telemetry-item">
+              <span class="telemetry-label">Altitude</span>
+              <span class="telemetry-value">45 m</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="telemetry-label">Ground Speed</span>
+              <span class="telemetry-value">12.5 km/h</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="telemetry-label">Vertical Speed</span>
+              <span class="telemetry-value">0.2 m/s</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="telemetry-label">Distance to Home</span>
+              <span class="telemetry-value">123 m</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="telemetry-label">Flight Time</span>
+              <span class="telemetry-value">08:42</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="telemetry-label">Time Remaining</span>
+              <span class="telemetry-value warning">15:21</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <footer>
+    Aceix | powered by Apollo Flight Stack
+  </footer>
+
+</body>
+</html>

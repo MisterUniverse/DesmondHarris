@@ -1,0 +1,493 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --deadlock-primary: #8B5CF6;
+    --deadlock-secondary: #F59E0B;
+    --deadlock-accent: #06B6D4;
+    --deadlock-danger: #EF4444;
+    --deadlock-success: #10B981;
+    --deadlock-dark: #0F0F23;
+    --deadlock-darker: #0A0A18;
+    --deadlock-card: #1A1A2E;
+    --deadlock-border: #2D2D44;
+    --deadlock-text: #E5E7EB;
+    --deadlock-text-dim: #9CA3AF;
+    --deadlock-text-bright: #F9FAFB;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--deadlock-darker);
+    color: var(--deadlock-text);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Animated background for immersive feel */
+.background-effects {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    background: 
+        radial-gradient(circle at 15% 25%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 85% 75%, rgba(6, 182, 212, 0.15) 0%, transparent 40%),
+        linear-gradient(135deg, var(--deadlock-darker) 0%, var(--deadlock-dark) 100%);
+}
+
+.background-grid {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(rgba(139, 92, 246, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139, 92, 246, 0.07) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+    animation: pan-grid 45s linear infinite; /* Subtle panning effect */
+}
+
+@keyframes pan-grid {
+    0% { background-position: 0 0; }
+    100% { background-position: 60px 60px; }
+}
+
+/* Main content container */
+.main-container {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Header section */
+.hero-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.game-title {
+    font-size: 4.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--deadlock-primary), var(--deadlock-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.03em;
+    text-shadow: 0 0 50px rgba(139, 92, 246, 0.3);
+}
+
+.game-subtitle {
+    font-size: 1.25rem;
+    color: var(--deadlock-text-dim);
+    font-weight: 400;
+    margin-bottom: 2rem;
+}
+
+/* Top statistics bar */
+.stats-bar {
+    background: rgba(26, 26, 46, 0.5); /* Semi-transparent for glass effect */
+    border: 1px solid var(--deadlock-border);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 3rem;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.stats-content {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--deadlock-primary);
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--deadlock-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Grid for hero cards */
+.heroes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 2rem;
+}
+
+/* Hero Card Redesign */
+.hero-card {
+    background: rgba(26, 26, 46, 0.6); /* Enhanced glassmorphism */
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--deadlock-border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+}
+
+.hero-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--deadlock-primary);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4), 0 0 30px rgba(139, 92, 246, 0.3);
+}
+
+.hero-card-banner {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+    border-bottom: 1px solid var(--deadlock-border);
+}
+
+.hero-banner-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 20%;
+    transition: transform 0.4s ease-out;
+}
+
+.hero-card:hover .hero-banner-image {
+    transform: scale(1.08); /* Subtle zoom on hover */
+}
+
+.banner-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70%;
+    background: linear-gradient(to top, var(--deadlock-card) 20%, transparent 100%);
+}
+
+.hero-card-header {
+    position: absolute;
+    bottom: 1rem;
+    left: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.hero-name {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--deadlock-text-bright);
+    text-shadow: 0 2px 10px var(--deadlock-darker);
+}
+
+.hero-class {
+    font-size: 0.875rem;
+    color: var(--deadlock-text-dim);
+    font-weight: 500;
+}
+
+.hero-role {
+    background: linear-gradient(135deg, var(--deadlock-primary), var(--deadlock-accent));
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.hero-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Allows content to fill space */
+}
+
+.hero-description {
+    margin-bottom: 1.5rem;
+    flex-grow: 1; /* Pushes button to the bottom */
+}
+
+.lore-text {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--deadlock-text-dim);
+    margin-bottom: 1rem;
+}
+
+.playstyle-text {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--deadlock-text);
+    background: rgba(139, 92, 246, 0.08);
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 3px solid var(--deadlock-primary);
+}
+
+.hero-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: rgba(0,0,0, 0.2);
+    border: 1px solid var(--deadlock-border);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: var(--deadlock-primary);
+    transform: translateY(-2px);
+}
+
+.stat-card-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--deadlock-accent);
+    margin-bottom: 0.25rem;
+}
+
+.stat-card-label {
+    font-size: 0.75rem;
+    color: var(--deadlock-text-dim);
+    text-transform: uppercase;
+}
+
+.expand-button {
+    width: 100%;
+    background: linear-gradient(135deg, var(--deadlock-primary), var(--deadlock-secondary));
+    border: none;
+    color: white;
+    padding: 0.85rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: auto; /* Pushes button to bottom */
+}
+
+.expand-button:hover {
+    background: linear-gradient(135deg, var(--deadlock-secondary), var(--deadlock-primary));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+}
+
+/* Modal Styles */
+.modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 10, 24, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.modal-container.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-content {
+    background: var(--deadlock-darker);
+    border: 1px solid var(--deadlock-primary);
+    border-radius: 16px;
+    padding: 2.5rem;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 50px rgba(139, 92, 246, 0.4);
+    transform: scale(0.95) translateY(10px);
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+.modal-container.show .modal-content {
+    transform: scale(1) translateY(0);
+}
+
+.modal-content::-webkit-scrollbar { width: 8px; }
+.modal-content::-webkit-scrollbar-track { background: var(--deadlock-darker); }
+.modal-content::-webkit-scrollbar-thumb {
+    background-color: var(--deadlock-primary);
+    border-radius: 4px;
+    border: 2px solid var(--deadlock-darker);
+}
+
+.modal-close-button {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    background: none;
+    border: none;
+    color: var(--deadlock-text-dim);
+    font-size: 2.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.modal-close-button:hover {
+    color: var(--deadlock-text-bright);
+    transform: rotate(90deg);
+}
+
+/* Styles for content inside the modal */
+#modal-body .hero-card-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--deadlock-border);
+    gap: 1rem;
+}
+
+#modal-body .hero-name { font-size: 2.5rem; }
+#modal-body .info-section { margin-bottom: 2rem; }
+#modal-body .info-section:last-child { margin-bottom: 0; }
+
+#modal-body .section-header {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--deadlock-primary);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+#modal-body .lore-text { font-size: 1rem; color: var(--deadlock-text); }
+
+.info-section { margin-bottom: 1.5rem; }
+.info-section:last-child { margin-bottom: 0; }
+
+.abilities-grid, .upgrades-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.ability-tag, .upgrade-tag {
+    background: rgba(6, 182, 212, 0.15);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    color: var(--deadlock-accent);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.ability-tag:hover, .upgrade-tag:hover {
+    background: rgba(6, 182, 212, 0.3);
+    border-color: var(--deadlock-accent);
+    transform: translateY(-2px);
+    color: var(--deadlock-text-bright);
+}
+
+/* Loading and Error states */
+.loading-state, .error-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--deadlock-text-dim);
+    background: rgba(26, 26, 46, 0.5);
+    border: 1px solid var(--deadlock-border);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    margin-top: 2rem;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--deadlock-border);
+    border-top-color: var(--deadlock-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.error-state {
+    color: var(--deadlock-danger);
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.error-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--deadlock-danger);
+}
+
+.error-message {
+    color: var(--deadlock-text-dim);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-container { padding: 1rem; }
+    .game-title { font-size: 3rem; }
+    .heroes-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+        .hero-card-header { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+    .hero-role { align-self: flex-start; margin-top: 0.5rem; }
+    .hero-stats { grid-template-columns: 1fr; }
+    .stats-content { flex-direction: column; gap: 1.5rem; }
+    .modal-content { padding: 2rem 1.5rem; }
+    #modal-body .hero-card-header { flex-direction: column; align-items: flex-start; }
+}

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Media Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1 id="app-title">Media Viewer</h1>
+    <div class="controls">
+      <button id="load-media">Load Media</button>
+    </div>
+  </header>
+  
+  <!-- Sidebar -->
+  <div id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <h2>Options</h2>
+      <button id="close-sidebar" class="close-button">×</button>
+    </div>
+    <div class="sidebar-content">
+      <!-- Media Sources -->
+      <div class="sidebar-section">
+        <h3>Media Sources</h3>
+        <button class="sidebar-button" id="load-image">Load Image</button>
+        <button class="sidebar-button" id="load-video">Load Video</button>
+        <button class="sidebar-button" id="load-stream">Load Stream</button>
+        <input type="file" id="file-input" accept="image/*,video/*" style="display: none;" multiple>
+      </div>
+      
+      <!-- Media List -->
+      <div class="sidebar-section">
+        <h3>Media List</h3>
+        <div id="media-list" class="media-list">
+          <div class="empty-list">No media loaded</div>
+        </div>
+      </div>
+      
+      <!-- Media Information -->
+      <div class="sidebar-section">
+        <h3>Media Information</h3>
+        <div class="info-item">
+          <span class="info-label">Dimensions:</span>
+          <span id="media-dimensions" class="info-value">--</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">File size:</span>
+          <span id="media-size" class="info-value">--</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Type:</span>
+          <span id="media-type" class="info-value">--</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Sidebar overlay -->
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+  
+  <main>
+    <div id="canvas-container">
+      <!-- Media elements -->
+      <div id="media-elements">
+        <canvas id="main-canvas"></canvas>
+        <video id="video-element" controls style="display: none;"></video>
+      </div>
+      
+      <!-- Loading indicator -->
+      <div id="loading">Loading media...</div>
+      
+      <!-- Annotation toolbar -->
+      <div id="annotation-toolbar" class="annotation-toolbar">
+        <button data-tool="select" title="Select" class="tool-button">⊙</button>
+        <button data-tool="rectangle" title="Rectangle" class="tool-button">□</button>
+        <button data-tool="ellipse" title="Ellipse" class="tool-button">○</button>
+        <button data-tool="line" title="Line" class="tool-button">╱</button>
+        <button data-tool="polyline" title="Polyline" class="tool-button">⬡</button>
+        <button data-tool="spot" title="Spot" class="tool-button">•</button>
+        <button data-tool="freehand" title="Draw" class="tool-button">✎</button>
+        <button data-tool="eraser" title="Erase" class="tool-button">⌫</button>
+        <button data-tool="delete" title="Delete" class="tool-button">🗑️</button>
+        <button data-tool="finish" title="Finish" class="tool-button" style="display: none;">✓</button>
+      </div>
+      
+      <!-- Fullscreen button -->
+      <button id="fullscreen-btn" class="fullscreen-button" aria-label="Toggle fullscreen">
+        <svg class="fullscreen-icon" viewBox="0 0 24 24" width="24" height="24">
+          <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+        </svg>
+      </button>
+    </div>
+  </main>
+  
+  <footer>
+    Media Viewer | Annotation Tool
+  </footer>
+
+  <!-- Import scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  <script src="media-loader.js"></script>
+  <script src="roi-tools.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

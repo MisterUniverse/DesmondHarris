@@ -1,0 +1,5634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thermal Fatigue Monitor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .dashboard-container {
+      min-height: 100vh;
+      background: #f8fafc;
+    }
+    
+    .top-nav {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+    }
+    
+    .nav-button {
+      transition: all 0.2s ease;
+    }
+    
+    .nav-button.active {
+      background: #3b82f6;
+      color: white;
+    }
+    
+    .nav-button:not(.active):hover {
+      background: #334155;
+      color: white;
+    }
+    
+    .grid-container {
+      display: grid;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      max-width: 1800px;
+      margin: 0 auto;
+    }
+    
+    /* Dynamic grid columns based on current layout */
+    .grid-6-col { grid-template-columns: repeat(6, 1fr); }
+    .grid-8-col { grid-template-columns: repeat(8, 1fr); }
+    
+    .component-wrapper {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    
+    .component-header {
+      padding: 1rem 1.5rem 0.5rem;
+      border-bottom: 1px solid #f1f5f9;
+      background: #fafafa;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .component-title {
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 14px;
+      margin: 0;
+    }
+    
+    .component-content {
+      padding: 1.5rem;
+      min-height: 80px;
+    }
+    
+    /* Grid positioning classes */
+    .col-1 { grid-column: span 1; }
+    .col-2 { grid-column: span 2; }
+    .col-3 { grid-column: span 3; }
+    .col-4 { grid-column: span 4; }
+    .col-5 { grid-column: span 5; }
+    .col-6 { grid-column: span 6; }
+    .col-8 { grid-column: span 8; }
+    
+    .row-1 { min-height: 120px; }
+    .row-2 { min-height: 200px; }
+    .row-3 { min-height: 300px; }
+    .row-4 { min-height: 400px; }
+    
+    .campaign-status {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .status-active { background: #dcfce7; color: #166534; }
+    .status-ending { background: #fef3c7; color: #92400e; }
+    .status-critical { background: #fecaca; color: #991b1b; }
+    .status-inactive { background: #f1f5f9; color: #64748b; }
+    
+    @media (max-width: 1400px) {
+      .grid-8-col { grid-template-columns: repeat(6, 1fr); }
+      .col-8 { grid-column: span 6; }
+    }
+    
+    @media (max-width: 1000px) {
+      .grid-6-col, .grid-8-col { grid-template-columns: repeat(4, 1fr); }
+      .col-5, .col-6, .col-8 { grid-column: span 4; }
+    }
+    
+    @media (max-width: 768px) {
+      .grid-6-col, .grid-8-col { grid-template-columns: 1fr; gap: 1rem; padding: 1rem; }
+      .col-1, .col-2, .col-3, .col-4, .col-5, .col-6, .col-8 { grid-column: span 1; }
+    }
+
+    .tool-button {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .tool-button.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+  }
+  
+  .tool-button:hover:not(.active) {
+    background: #f3f4f6;
+  }
+  
+  .thermal-image-placeholder {
+    background: linear-gradient(45deg, #1e293b 0%, #475569 50%, #1e293b 100%);
+  }
+  
+  .scan-row.selected {
+    border-left: 3px solid #3b82f6;
+  }
+  </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+  
+  <!-- TOP NAVIGATION -->
+  <header class="top-nav">
+    <div class="max-w-7xl mx-auto px-6 py-4">
+      <div class="flex justify-between items-center">
+        
+        <div class="text-white">
+          <h1 class="text-xl font-semibold">Thermal Fatigue Monitoring</h1>
+          <p class="text-sm text-slate-400" id="nav-subtitle">Thermal & RUL Analysis System</p>
+        </div>
+        
+        <nav class="flex gap-1" id="main-nav">
+          <!-- Navigation will be populated by JS -->
+        </nav>
+        
+      </div>
+    </div>
+  </header>
+
+  <!-- DASHBOARD GRID -->
+  <main class="grid-container" id="dashboard-grid">
+    <!-- Components will be dynamically added here -->
+  </main>
+  
+</div>
+
+<script>
+// =============================================================================
+// DASHBOARD FRAMEWORK
+// =============================================================================
+
+class DashboardComponent {
+  constructor(id, title, config = {}) {
+    this.id = id;
+    this.title = title;
+    this.config = {
+      cols: 1,
+      rows: 1,
+      ...config
+    };
+    this.element = null;
+    this.data = null;
+  }
+  
+  render() {
+    return '<div class="text-gray-500 text-center">Component not implemented</div>';
+  }
+  
+  async loadData() {
+    return null;
+  }
+  
+  createElement() {
+    const wrapper = document.createElement('div');
+    wrapper.className = `component-wrapper col-${this.config.cols} row-${this.config.rows}`;
+    wrapper.setAttribute('data-component-id', this.id);
+    
+    const headerActions = this.config.headerActions || '';
+    
+    wrapper.innerHTML = `
+      <div class="component-header">
+        <h3 class="component-title">${this.title}</h3>
+        ${headerActions}
+      </div>
+      <div class="component-content">
+        ${this.render()}
+      </div>
+    `;
+    
+    this.element = wrapper;
+    this.attachEventListeners();
+    return wrapper;
+  }
+  
+  attachEventListeners() {
+    // Override in child components for custom interactions
+  }
+  
+  update() {
+    if (this.element) {
+      const content = this.element.querySelector('.component-content');
+      content.innerHTML = this.render();
+      this.attachEventListeners();
+    }
+  }
+  
+  destroy() {
+    if (this.element) {
+      this.element.remove();
+    }
+  }
+}
+
+class ComponentRegistry {
+  constructor() {
+    this.components = new Map();
+  }
+  
+  register(componentClass) {
+    this.components.set(componentClass.name, componentClass);
+  }
+  
+  create(componentType, id, title, config) {
+    const ComponentClass = this.components.get(componentType);
+    if (!ComponentClass) {
+      throw new Error(`Component type "${componentType}" not found`);
+    }
+    return new ComponentClass(id, title, config);
+  }
+}
+
+class DashboardManager {
+  constructor() {
+    this.components = new Map();
+    this.registry = new ComponentRegistry();
+    this.currentLayout = null;
+    this.currentTab = 'overview';
+    this.layouts = new Map();
+    this.eventBus = new EventTarget();
+  }
+  
+  registerComponent(componentClass) {
+    this.registry.register(componentClass);
+  }
+  
+  registerLayout(key, layoutConfig) {
+    this.layouts.set(key, layoutConfig);
+  }
+  
+  loadLayout(layoutKey) {
+    const layoutConfig = this.layouts.get(layoutKey);
+    if (!layoutConfig) {
+      console.error(`Layout "${layoutKey}" not found`);
+      return;
+    }
+    
+    this.clearDashboard();
+    this.currentLayout = layoutConfig;
+    this.currentTab = layoutKey;
+    
+    document.getElementById('nav-subtitle').textContent = layoutConfig.subtitle || 'System';
+    
+    const grid = document.getElementById('dashboard-grid');
+    grid.className = `grid-container ${layoutConfig.gridClass || 'grid-6-col'}`;
+    
+    this.loadNavigation();
+    
+    layoutConfig.components.forEach(componentConfig => {
+      this.addComponent(
+        componentConfig.type,
+        componentConfig.id,
+        componentConfig.title,
+        componentConfig.config
+      );
+    });
+  }
+  
+  loadNavigation() {
+    const nav = document.getElementById('main-nav');
+    nav.innerHTML = '';
+    
+    const navItems = [
+      { key: 'overview', label: 'Overview' },
+      { key: 'campaigns', label: 'Campaigns' },
+      { key: 'thermal', label: 'Thermal Scans' },
+      { key: 'maintenance', label: 'Maintenance' },
+      { key: 'analytics', label: 'Analytics' }
+    ];
+    
+    navItems.forEach(item => {
+      const button = document.createElement('button');
+      button.className = `nav-button px-4 py-2 text-slate-300 text-sm rounded-md ${this.currentTab === item.key ? 'active' : ''}`;
+      button.textContent = item.label;
+      button.addEventListener('click', () => this.switchTab(item.key));
+      nav.appendChild(button);
+    });
+  }
+  
+  addComponent(type, id, title, config) {
+    const component = this.registry.create(type, id, title, config);
+    this.components.set(id, component);
+    
+    const grid = document.getElementById('dashboard-grid');
+    grid.appendChild(component.createElement());
+    
+    component.loadData().then(() => {
+      component.update();
+    });
+  }
+  
+  removeComponent(id) {
+    const component = this.components.get(id);
+    if (component) {
+      component.destroy();
+      this.components.delete(id);
+    }
+  }
+  
+  clearDashboard() {
+    this.components.forEach(component => component.destroy());
+    this.components.clear();
+    document.getElementById('dashboard-grid').innerHTML = '';
+  }
+  
+  switchTab(tabKey) {
+    if (this.layouts.has(tabKey)) {
+      this.loadLayout(tabKey);
+    } else {
+      console.log(`Tab "${tabKey}" layout not implemented yet`);
+    }
+    
+    this.eventBus.dispatchEvent(new CustomEvent('tabChange', { detail: { tab: tabKey } }));
+  }
+  
+  emit(eventName, data) {
+    this.eventBus.dispatchEvent(new CustomEvent(eventName, { detail: data }));
+  }
+  
+  on(eventName, callback) {
+    this.eventBus.addEventListener(eventName, callback);
+  }
+}
+
+// =============================================================================
+// OVERVIEW COMPONENTS
+// =============================================================================
+
+class ActiveLadlesComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="text-center">
+        <div class="text-3xl font-bold text-blue-600 mb-2">${this.data?.count || '...'}</div>
+        <div class="text-sm text-gray-600">Active Ladles</div>
+        <div class="text-xs text-gray-400 mt-1">${this.data?.offline || 0} Offline • ${this.data?.maintenance || 0} Maintenance</div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    this.data = { count: 19, offline: 1, maintenance: 1 };
+  }
+}
+
+class ActiveCampaignsComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="text-center">
+        <div class="text-3xl font-bold text-green-600 mb-2">${this.data?.active || '...'}</div>
+        <div class="text-sm text-gray-600">Active Campaigns</div>
+        <div class="text-xs text-gray-400 mt-1">${this.data?.total || 0} Total Campaigns</div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    this.data = { active: 15, total: 23 };
+  }
+}
+
+class CriticalHotspotsComponent extends DashboardComponent {
+  render() {
+    if (!this.data?.hotspots) {
+      return '<div class="text-center text-gray-500">Loading hotspots...</div>';
+    }
+    
+    return `
+      <div>
+        <div class="text-lg font-bold text-red-600 mb-3">${this.data.hotspots.length} Critical Hotspots</div>
+        ${this.data.hotspots.map(spot => `
+          <div class="flex justify-between items-center py-1 border-b border-gray-100 last:border-b-0">
+            <div class="text-sm">
+              <div class="font-medium">${spot.ladle}</div>
+              <div class="text-gray-500 text-xs">${spot.location}</div>
+            </div>
+            <div class="text-sm font-bold text-red-600">${spot.temp}°C</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 700));
+    this.data = {
+      hotspots: [
+        { ladle: 'L-101', location: 'Slagline_North', temp: 465 },
+        { ladle: 'L-205', location: 'Bottom_Center', temp: 428 }
+      ]
+    };
+  }
+}
+
+class LowRULAlertsComponent extends DashboardComponent {
+  render() {
+    if (!this.data) {
+      return `<div class="text-center py-4 text-gray-500 text-sm">Loading alerts...</div>`;
+    }
+
+    if (this.data.alerts.length === 0) {
+      return `
+        <div class="text-center py-4 text-green-600 text-sm">
+          ✅ All ladles operating safely
+        </div>
+      `;
+    }
+
+    return `
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <h4 class="font-medium text-gray-900">Low RUL Alerts</h4>
+          <span class="text-xs text-red-600 font-medium">${this.data.alerts.length} alerts</span>
+        </div>
+        
+        ${this.data.alerts.slice(0, 3).map(alert => `
+          <div class="flex justify-between items-center text-sm py-1">
+            <div class="flex items-center space-x-2">
+              <div class="w-2 h-2 ${alert.rul_heats <= 3 ? 'bg-red-500' : 'bg-yellow-500'} rounded-full"></div>
+              <span class="font-medium">${alert.ladle_name}</span>
+            </div>
+            <span class="text-xs text-gray-600">${alert.rul_heats} heats left</span>
+          </div>
+        `).join('')}
+        
+        ${this.data.alerts.length > 3 ? `
+          <div class="text-xs text-gray-500 text-center">
+            +${this.data.alerts.length - 3} more alerts
+          </div>
+        ` : ''}
+        <div class="pt-2 border-t">
+          <button class="w-full px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors">
+            Schedule Maintenance
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 450));
+    
+    this.data = {
+      alerts: [
+        { ladle_name: 'L-103', rul_heats: 2 },
+        { ladle_name: 'L-067', rul_heats: 3 },
+        { ladle_name: 'L-034', rul_heats: 5 },
+        { ladle_name: 'L-091', rul_heats: 7 },
+        { ladle_name: 'L-025', rul_heats: 9 }
+      ]
+    };
+  }
+}
+
+class RULSummaryComponent extends DashboardComponent {
+  render() {
+    if (!this.data) {
+      return `<div class="text-center py-8 text-gray-500 text-sm">Loading RUL data...</div>`;
+    }
+
+    return `
+      <div class="space-y-4">
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-3 gap-4 text-center">
+          <div>
+            <div class="text-2xl font-bold text-gray-900">${this.data.avgRul}</div>
+            <div class="text-xs text-gray-600">Avg RUL</div>
+          </div>
+          <div>
+            <div class="text-2xl font-bold text-red-600">${this.data.minRul}</div>
+            <div class="text-xs text-gray-600">Lowest RUL</div>
+          </div>
+          <div>
+            <div class="text-2xl font-bold text-green-600">${this.data.maxRul}</div>
+            <div class="text-xs text-gray-600">Highest RUL</div>
+          </div>
+        </div>
+
+        <!-- RUL Distribution Chart -->
+        <div class="bg-gray-50 p-3 rounded">
+          <h4 class="text-sm font-medium text-gray-900 mb-2">RUL Distribution</h4>
+          <div id="rul-chart-${this.id}" class="space-y-1"></div>
+        </div>
+
+        <!-- Critical Campaigns -->
+        <div>
+          <h4 class="text-sm font-medium text-gray-900 mb-2">Lowest RUL Campaigns</h4>
+          <div class="space-y-1">
+            ${this.data.campaigns.slice(0, 4).map(campaign => `
+              <div class="flex justify-between items-center text-xs">
+                <span class="font-medium">Campaign ${campaign.campaign_id}</span>
+                <span class="px-2 py-1 ${campaign.rul_heats <= 10 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'} rounded">
+                  ${campaign.rul_heats} heats
+                </span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderChart() {
+    const chartContainer = document.getElementById(`rul-chart-${this.id}`);
+    if (!chartContainer || !this.data) return;
+
+    const ranges = [
+      { label: '0-10 heats', count: this.data.distribution.critical, color: 'bg-red-500' },
+      { label: '11-25 heats', count: this.data.distribution.low, color: 'bg-yellow-500' },
+      { label: '26-50 heats', count: this.data.distribution.medium, color: 'bg-blue-500' },
+      { label: '50+ heats', count: this.data.distribution.high, color: 'bg-green-500' }
+    ];
+
+    const total = ranges.reduce((sum, range) => sum + range.count, 0);
+
+    chartContainer.innerHTML = ranges.map(range => {
+      const percentage = total > 0 ? Math.round((range.count / total) * 100) : 0;
+      return `
+        <div class="flex items-center text-xs">
+          <div class="w-16 text-gray-700 text-right mr-2">${range.label}</div>
+          <div class="flex-1 bg-gray-200 rounded h-3 relative">
+            <div class="${range.color} h-3 rounded transition-all duration-500" 
+                 style="width: ${percentage}%"></div>
+            <span class="absolute right-1 top-0 h-3 flex items-center text-xs font-medium text-gray-800">
+              ${range.count}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Simulating data from: SELECT campaign_id, rul_heats FROM RUL_Predictions ORDER BY rul_heats
+    const campaigns = [
+      { campaign_id: 147, rul_heats: 2 },
+      { campaign_id: 152, rul_heats: 3 },
+      { campaign_id: 149, rul_heats: 5 },
+      { campaign_id: 148, rul_heats: 7 },
+      { campaign_id: 146, rul_heats: 9 },
+      { campaign_id: 143, rul_heats: 12 },
+      { campaign_id: 151, rul_heats: 18 },
+      { campaign_id: 144, rul_heats: 23 },
+      { campaign_id: 150, rul_heats: 31 },
+      { campaign_id: 145, rul_heats: 45 },
+      { campaign_id: 141, rul_heats: 67 },
+      { campaign_id: 142, rul_heats: 89 }
+    ];
+
+    const rulValues = campaigns.map(c => c.rul_heats);
+    const avgRul = Math.round(rulValues.reduce((sum, val) => sum + val, 0) / rulValues.length);
+    const minRul = Math.min(...rulValues);
+    const maxRul = Math.max(...rulValues);
+
+    this.data = {
+      campaigns,
+      avgRul,
+      minRul,
+      maxRul,
+      distribution: {
+        critical: campaigns.filter(c => c.rul_heats <= 10).length,
+        low: campaigns.filter(c => c.rul_heats > 10 && c.rul_heats <= 25).length,
+        medium: campaigns.filter(c => c.rul_heats > 25 && c.rul_heats <= 50).length,
+        high: campaigns.filter(c => c.rul_heats > 50).length
+      }
+    };
+    
+    // Render chart after data loads
+    setTimeout(() => this.renderChart(), 100);
+  }
+}
+
+class RecentScansComponent extends DashboardComponent {
+  render() {
+    if (!this.data) {
+      return `<div class="text-center py-4 text-gray-500 text-sm">Loading recent scans...</div>`;
+    }
+
+    return `
+      <div class="space-y-3">
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-2 gap-3 text-center">
+          <div>
+            <div class="text-lg font-bold text-red-600">${this.data.hotCount}</div>
+            <div class="text-xs text-gray-600">Hot Scans (>400°C)</div>
+          </div>
+          <div>
+            <div class="text-lg font-bold text-gray-900">${this.data.scans.length}</div>
+            <div class="text-xs text-gray-600">Last Hour</div>
+          </div>
+        </div>
+
+        <!-- Recent Scans List -->
+        <div>
+          <h4 class="text-sm font-medium text-gray-900 mb-2">Latest Scans</h4>
+          <div class="space-y-1">
+            ${this.data.scans.slice(0, 6).map(scan => `
+              <div class="flex justify-between items-center text-xs py-1">
+                <div class="flex items-center space-x-2">
+                  <div class="w-2 h-2 ${this.getTempColor(scan.max_shell_temp_c)} rounded-full"></div>
+                  <span class="font-medium">${scan.ladle_name}</span>
+                  <span class="text-gray-500">${this.getTimeAgo(scan.scan_timestamp)}</span>
+                </div>
+                <div class="text-right">
+                  <div class="font-medium">${scan.max_shell_temp_c}°C</div>
+                  <div class="text-gray-500">avg ${scan.avg_shell_temp_c}°C</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="border-t pt-2">
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-gray-600">Cameras Online: <strong>${this.data.camerasOnline}/${this.data.totalCameras}</strong></span>
+            <span class="text-gray-500">Last scan: ${this.getTimeAgo(this.data.scans[0]?.scan_timestamp)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  getTempColor(temp) {
+    if (temp >= 450) return 'bg-red-500';
+    if (temp >= 400) return 'bg-orange-500';
+    if (temp >= 350) return 'bg-yellow-500';
+    return 'bg-green-500';
+  }
+
+  getTimeAgo(timestamp) {
+    const now = new Date();
+    const past = new Date(timestamp);
+    const diffMins = Math.floor((now - past) / (1000 * 60));
+    
+    if (diffMins < 1) return 'now';
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h`;
+    return `${Math.floor(diffMins / 1440)}d`;
+  }
+
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    
+    // Simulating data from: SELECT * FROM Thermal_Scans ORDER BY scan_timestamp DESC LIMIT 10
+    // Plus joined ladle data for display
+    const scans = [
+      {
+        scan_id: 1523,
+        ladle_name: 'L-103',
+        scan_timestamp: '2025-06-08T15:45:00Z',
+        max_shell_temp_c: 465,
+        avg_shell_temp_c: 387,
+        data_source: 'CAM_01'
+      },
+      {
+        scan_id: 1522,
+        ladle_name: 'L-067',
+        scan_timestamp: '2025-06-08T15:42:00Z',
+        max_shell_temp_c: 423,
+        avg_shell_temp_c: 352,
+        data_source: 'CAM_02'
+      },
+      {
+        scan_id: 1521,
+        ladle_name: 'L-091',
+        scan_timestamp: '2025-06-08T15:38:00Z',
+        max_shell_temp_c: 389,
+        avg_shell_temp_c: 341,
+        data_source: 'CAM_01'
+      },
+      {
+        scan_id: 1520,
+        ladle_name: 'L-034',
+        scan_timestamp: '2025-06-08T15:35:00Z',
+        max_shell_temp_c: 412,
+        avg_shell_temp_c: 367,
+        data_source: 'CAM_03'
+      },
+      {
+        scan_id: 1519,
+        ladle_name: 'L-025',
+        scan_timestamp: '2025-06-08T15:31:00Z',
+        max_shell_temp_c: 356,
+        avg_shell_temp_c: 329,
+        data_source: 'CAM_02'
+      },
+      {
+        scan_id: 1518,
+        ladle_name: 'L-078',
+        scan_timestamp: '2025-06-08T15:28:00Z',
+        max_shell_temp_c: 398,
+        avg_shell_temp_c: 345,
+        data_source: 'CAM_01'
+      }
+    ];
+
+    this.data = {
+      scans,
+      hotCount: scans.filter(s => s.max_shell_temp_c > 400).length,
+      camerasOnline: 3,
+      totalCameras: 3
+    };
+  }
+}
+
+class OperationalCyclesComponent extends DashboardComponent {
+  render() {
+    if (!this.data) {
+      return `<div class="text-center py-4 text-gray-500 text-sm">Loading cycle data...</div>`;
+    }
+
+    return `
+      <div class="space-y-3">
+        <!-- Current Production Stats -->
+        <div class="grid grid-cols-2 gap-3 text-center">
+          <div>
+            <div class="text-lg font-bold text-blue-600">${this.data.activeHeats}</div>
+            <div class="text-xs text-gray-600">Active Heats</div>
+          </div>
+          <div>
+            <div class="text-lg font-bold text-gray-900">${this.data.todayCount}</div>
+            <div class="text-xs text-gray-600">Today's Heats</div>
+          </div>
+        </div>
+
+        <!-- Steel Grade Distribution -->
+        <div class="bg-gray-50 p-2 rounded">
+          <h4 class="text-sm font-medium text-gray-900 mb-1">Steel Grades Today</h4>
+          <div class="space-y-1">
+            ${Object.entries(this.data.gradeDistribution).map(([grade, count]) => `
+              <div class="flex justify-between items-center text-xs">
+                <span class="font-medium">${grade}</span>
+                <span class="px-1 py-0.5 bg-gray-200 text-gray-700 rounded text-xs">${count}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Recent Cycles -->
+        <div>
+          <h4 class="text-sm font-medium text-gray-900 mb-2">Recent Cycles</h4>
+          <div class="space-y-1">
+            ${this.data.recentCycles.slice(0, 5).map(cycle => `
+              <div class="flex justify-between items-center text-xs py-1">
+                <div class="flex items-center space-x-2">
+                  <div class="w-2 h-2 ${this.getStatusColor(cycle.status)} rounded-full"></div>
+                  <span class="font-medium">Heat ${cycle.heat_number}</span>
+                  <span class="text-gray-500">${cycle.ladle_name}</span>
+                </div>
+                <div class="text-right">
+                  <div class="font-medium">${cycle.steel_grade}</div>
+                  <div class="text-gray-500">${cycle.duration}min</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Production Status -->
+        <div class="border-t pt-2">
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-gray-600">Avg Cycle Time: <strong>${this.data.avgCycleTime}min</strong></span>
+            <span class="text-gray-500">Last update: ${this.getTimeAgo(this.data.lastUpdate)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  getStatusColor(status) {
+    switch(status) {
+      case 'active': return 'bg-green-500';
+      case 'teeming': return 'bg-blue-500';
+      case 'completed': return 'bg-gray-400';
+      default: return 'bg-yellow-500';
+    }
+  }
+
+  getTimeAgo(timestamp) {
+    const now = new Date();
+    const past = new Date(timestamp);
+    const diffMins = Math.floor((now - past) / (1000 * 60));
+    
+    if (diffMins < 1) return 'now';
+    if (diffMins < 60) return `${diffMins}m`;
+    return `${Math.floor(diffMins / 60)}h`;
+  }
+
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 420));
+    
+    // Simulating data from: SELECT heat_number, steel_grade FROM Operational_Cycles
+    // Plus additional operational data for context
+    const recentCycles = [
+      {
+        heat_number: 1247,
+        steel_grade: 'Q235B',
+        ladle_name: 'L-103',
+        status: 'active',
+        duration: 45,
+        timestamp: '2025-06-08T15:30:00Z'
+      },
+      {
+        heat_number: 1246,
+        steel_grade: 'A36',
+        ladle_name: 'L-067',
+        status: 'teeming',
+        duration: 52,
+        timestamp: '2025-06-08T15:15:00Z'
+      },
+      {
+        heat_number: 1245,
+        steel_grade: 'Q235B',
+        ladle_name: 'L-091',
+        status: 'completed',
+        duration: 48,
+        timestamp: '2025-06-08T14:50:00Z'
+      },
+      {
+        heat_number: 1244,
+        steel_grade: 'SS304',
+        ladle_name: 'L-034',
+        status: 'completed',
+        duration: 62,
+        timestamp: '2025-06-08T14:25:00Z'
+      },
+      {
+        heat_number: 1243,
+        steel_grade: 'A36',
+        ladle_name: 'L-025',
+        status: 'completed',
+        duration: 41,
+        timestamp: '2025-06-08T14:00:00Z'
+      },
+      {
+        heat_number: 1242,
+        steel_grade: 'Q235B',
+        ladle_name: 'L-078',
+        status: 'completed',
+        duration: 55,
+        timestamp: '2025-06-08T13:35:00Z'
+      }
+    ];
+
+    // Calculate grade distribution
+    const gradeCount = {};
+    recentCycles.forEach(cycle => {
+      gradeCount[cycle.steel_grade] = (gradeCount[cycle.steel_grade] || 0) + 1;
+    });
+
+    const avgDuration = Math.round(
+      recentCycles.reduce((sum, cycle) => sum + cycle.duration, 0) / recentCycles.length
+    );
+
+    this.data = {
+      recentCycles,
+      activeHeats: recentCycles.filter(c => c.status === 'active' || c.status === 'teeming').length,
+      todayCount: recentCycles.length,
+      gradeDistribution: gradeCount,
+      avgCycleTime: avgDuration,
+      lastUpdate: '2025-06-08T15:45:00Z'
+    };
+  }
+}
+
+class SystemAlertSummaryComponent extends DashboardComponent {
+  render() {
+    if (!this.data) {
+      return `<div class="text-center py-2 text-gray-500 text-sm">Loading system status...</div>`;
+    }
+
+    return `
+      <div class="grid grid-cols-6 gap-4 items-center">
+        <!-- RUL Alerts -->
+        <div class="text-center">
+          <div class="flex items-center justify-center space-x-1">
+            <div class="w-2 h-2 ${this.data.rul.count > 0 ? 'bg-red-500' : 'bg-green-500'} rounded-full"></div>
+            <span class="text-sm font-medium">RUL</span>
+          </div>
+          <div class="text-xs text-gray-600">${this.data.rul.count} alerts</div>
+        </div>
+
+        <!-- Thermal Alerts -->
+        <div class="text-center">
+          <div class="flex items-center justify-center space-x-1">
+            <div class="w-2 h-2 ${this.data.thermal.count > 0 ? 'bg-orange-500' : 'bg-green-500'} rounded-full"></div>
+            <span class="text-sm font-medium">Thermal</span>
+          </div>
+          <div class="text-xs text-gray-600">${this.data.thermal.count} hotspots</div>
+        </div>
+
+        <!-- Maintenance -->
+        <div class="text-center">
+          <div class="flex items-center justify-center space-x-1">
+            <div class="w-2 h-2 ${this.data.maintenance.overdue > 0 ? 'bg-yellow-500' : 'bg-green-500'} rounded-full"></div>
+            <span class="text-sm font-medium">Maintenance</span>
+          </div>
+          <div class="text-xs text-gray-600">${this.data.maintenance.scheduled} scheduled</div>
+        </div>
+
+        <!-- System Health -->
+        <div class="text-center">
+          <div class="flex items-center justify-center space-x-1">
+            <div class="w-2 h-2 ${this.data.system.offline > 0 ? 'bg-red-500' : 'bg-green-500'} rounded-full"></div>
+            <span class="text-sm font-medium">Systems</span>
+          </div>
+          <div class="text-xs text-gray-600">${this.data.system.online}/${this.data.system.total} online</div>
+        </div>
+
+        <!-- Production -->
+        <div class="text-center">
+          <div class="flex items-center justify-center space-x-1">
+            <div class="w-2 h-2 ${this.data.production.delayed > 0 ? 'bg-yellow-500' : 'bg-green-500'} rounded-full"></div>
+            <span class="text-sm font-medium">Production</span>
+          </div>
+          <div class="text-xs text-gray-600">${this.data.production.active} active</div>
+        </div>
+
+        <!-- Overall Status -->
+        <div class="text-center">
+          <div class="flex items-center justify-center space-x-1">
+            <div class="w-2 h-2 ${this.getOverallStatusColor()} rounded-full"></div>
+            <span class="text-sm font-medium">Overall</span>
+          </div>
+          <div class="text-xs text-gray-600">${this.getOverallStatus()}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  getOverallStatusColor() {
+    if (this.data.rul.count > 5 || this.data.system.offline > 0) return 'bg-red-500';
+    if (this.data.thermal.count > 3 || this.data.maintenance.overdue > 0 || this.data.production.delayed > 0) return 'bg-yellow-500';
+    return 'bg-green-500';
+  }
+
+  getOverallStatus() {
+    const criticalIssues = this.data.rul.count + this.data.system.offline;
+    const warningIssues = this.data.thermal.count + this.data.maintenance.overdue + this.data.production.delayed;
+    
+    if (criticalIssues > 0) return 'Critical';
+    if (warningIssues > 0) return 'Warning';
+    return 'Normal';
+  }
+
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Combined alerts view - aggregating data from multiple systems
+    this.data = {
+      rul: {
+        count: 5, // Low RUL alerts
+        critical: 2
+      },
+      thermal: {
+        count: 3, // Active hotspots
+        maxTemp: 465
+      },
+      maintenance: {
+        scheduled: 8,
+        overdue: 1,
+        today: 3
+      },
+      system: {
+        online: 15,
+        total: 15,
+        offline: 0
+      },
+      production: {
+        active: 4,
+        delayed: 0,
+        efficiency: 94
+      }
+    };
+  }
+}
+
+// =============================================================================
+// CAMPAIGNS COMPONENTS
+// =============================================================================
+
+class CampaignSummaryComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="grid grid-cols-2 gap-4 text-center">
+        <div>
+          <div class="text-2xl font-bold text-blue-600">${this.data?.active || '...'}</div>
+          <div class="text-xs text-gray-600">Active</div>
+        </div>
+        <div>
+          <div class="text-2xl font-bold text-amber-600">${this.data?.ending || '...'}</div>
+          <div class="text-xs text-gray-600">Ending Soon</div>
+        </div>
+        <div>
+          <div class="text-2xl font-bold text-green-600">${this.data?.avgHeats || '...'}</div>
+          <div class="text-xs text-gray-600">Avg Heats</div>
+        </div>
+        <div>
+          <div class="text-2xl font-bold text-purple-600">${this.data?.efficiency || '...'}%</div>
+          <div class="text-xs text-gray-600">Avg Efficiency</div>
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    this.data = { active: 15, ending: 3, avgHeats: 142, efficiency: 89 };
+  }
+}
+
+class FleetHealthComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="text-center">
+        <div class="text-4xl font-bold text-green-600 mb-2">${this.data?.score || '...'}</div>
+        <div class="text-sm text-gray-600">Overall Campaign Health</div>
+        <div class="text-xs text-gray-400 mt-2">Based on RUL, thermal patterns, maintenance</div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 600));
+    this.data = { score: 87 };
+  }
+}
+
+class CampaignTableComponent extends DashboardComponent {
+  render() {
+    if (!this.data?.campaigns) {
+      return '<div class="text-center text-gray-500">Loading campaigns...</div>';
+    }
+    
+    return `
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-200">
+              <th class="text-left py-2">Ladle</th>
+              <th class="text-left py-2">Start Date</th>
+              <th class="text-left py-2">Heats</th>
+              <th class="text-left py-2">RUL</th>
+              <th class="text-left py-2">Thermal Status</th>
+              <th class="text-left py-2">Lining Type</th>
+              <th class="text-left py-2">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            ${this.data.campaigns.map(campaign => `
+              <tr class="hover:bg-gray-50 cursor-pointer campaign-row" data-ladle="${campaign.ladle}">
+                <td class="py-3 font-medium">${campaign.ladle}</td>
+                <td class="py-3 text-gray-600">${campaign.startDate}</td>
+                <td class="py-3">${campaign.heats} / ${campaign.expectedHeats}</td>
+                <td class="py-3 font-bold ${campaign.rulClass}">${campaign.rul} heats</td>
+                <td class="py-3 ${campaign.thermalClass}">${campaign.thermalStatus}</td>
+                <td class="py-3">${campaign.liningType}</td>
+                <td class="py-3"><span class="campaign-status ${campaign.statusClass}">${campaign.status}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+  
+  attachEventListeners() {
+    // Add click handlers for table rows
+    this.element.querySelectorAll('.campaign-row').forEach(row => {
+      row.addEventListener('click', () => {
+        // Remove previous selection
+        this.element.querySelectorAll('.campaign-row').forEach(r => r.classList.remove('bg-blue-50'));
+        // Highlight selected
+        row.classList.add('bg-blue-50');
+        
+        const ladle = row.dataset.ladle;
+        // Emit event for other components to listen
+        dashboard.emit('campaignSelected', { ladle });
+      });
+    });
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 800));
+    this.data = {
+      campaigns: [
+        {
+          ladle: 'L-101',
+          startDate: '2024-08-15',
+          heats: 84,
+          expectedHeats: 120,
+          rul: 7,
+          rulClass: 'text-red-600',
+          thermalStatus: 'Hotspot Active',
+          thermalClass: 'text-red-600',
+          liningType: 'MgO-C',
+          status: 'Critical',
+          statusClass: 'status-critical'
+        },
+        {
+          ladle: 'L-205',
+          startDate: '2024-09-02',
+          heats: 67,
+          expectedHeats: 110,
+          rul: 43,
+          rulClass: 'text-amber-600',
+          thermalStatus: 'Trending Hot',
+          thermalClass: 'text-amber-600',
+          liningType: 'MgO-C',
+          status: 'Ending Soon',
+          statusClass: 'status-ending'
+        },
+        {
+          ladle: 'L-312',
+          startDate: '2024-10-10',
+          heats: 23,
+          expectedHeats: 115,
+          rul: 92,
+          rulClass: 'text-green-600',
+          thermalStatus: 'Normal',
+          thermalClass: 'text-green-600',
+          liningType: 'Al2O3-C',
+          status: 'Active',
+          statusClass: 'status-active'
+        }
+      ]
+    };
+  }
+}
+
+class CampaignDetailComponent extends DashboardComponent {
+  constructor(id, title, config) {
+    super(id, title, config);
+    this.selectedLadle = 'L-101';
+    this.chart = null;
+  }
+  
+  render() {
+    const campaign = this.data?.campaigns?.find(c => c.ladle === this.selectedLadle) || {};
+    
+    return `
+      <div class="space-y-4">
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">Campaign Info</h4>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div>Started: <span class="font-medium">${campaign.startDate || 'N/A'}</span></div>
+            <div>Lining: <span class="font-medium">${campaign.liningType || 'N/A'}, 180mm</span></div>
+            <div>Expected: <span class="font-medium">${campaign.expectedHeats || 0} heats</span></div>
+            <div>Completed: <span class="font-medium">${campaign.heats || 0} heats (${Math.round((campaign.heats || 0) / (campaign.expectedHeats || 1) * 100)}%)</span></div>
+          </div>
+        </div>
+        
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">RUL Trend - ${this.selectedLadle}</h4>
+          <div class="chart-container" style="position: relative; height: 140px;">
+            <canvas id="${this.id}-chart"></canvas>
+          </div>
+        </div>
+        
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">Thermal Summary</h4>
+          <div class="space-y-1 text-sm">
+            <div class="flex justify-between">
+              <span>Max Shell Temp:</span>
+              <span class="font-bold text-red-600">${this.getThermalData().maxTemp}°C</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Avg Shell Temp:</span>
+              <span>${this.getThermalData().avgTemp}°C</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Active Hotspots:</span>
+              <span class="font-bold text-red-600">${this.getThermalData().hotspots}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="pt-2 border-t">
+          <div class="grid grid-cols-2 gap-2">
+            <button class="px-3 py-2 bg-blue-600 text-white text-sm rounded">View Thermal</button>
+            <button class="px-3 py-2 bg-gray-600 text-white text-sm rounded">Schedule Maintenance</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  attachEventListeners() {
+    setTimeout(() => {
+      this.createChart();
+    }, 200);
+  }
+  
+  createChart() {
+    const canvas = document.getElementById(`${this.id}-chart`);
+    if (!canvas || this.chart) return;
+    
+    const ctx = canvas.getContext('2d');
+    const rulData = this.getRULDataForLadle(this.selectedLadle);
+    
+    this.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: rulData.labels,
+        datasets: [{
+          label: 'Predicted RUL',
+          data: rulData.predicted,
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: '#8b5cf6',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 2,
+          pointRadius: 4
+        }, {
+          label: 'Critical Threshold',
+          data: Array(rulData.labels.length).fill(15),
+          borderColor: '#ef4444',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          fill: false,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              font: { size: 10 }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Remaining Heats',
+              font: { size: 10 }
+            },
+            ticks: { font: { size: 9 } }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Heat Number',
+              font: { size: 10 }
+            },
+            ticks: { font: { size: 9 } }
+          }
+        }
+      }
+    });
+  }
+  
+  getRULDataForLadle(ladle) {
+    switch (ladle) {
+      case 'L-101':
+        return {
+          labels: [70, 72, 74, 76, 78, 80, 82, 84, 86, 88, 90],
+          predicted: [50, 45, 38, 32, 25, 18, 12, 7, 3, 1, 0]
+        };
+      
+      case 'L-205':
+        return {
+          labels: [55, 57, 59, 61, 63, 65, 67, 69, 71, 73, 75],
+          predicted: [65, 62, 58, 54, 50, 46, 43, 39, 35, 31, 27]
+        };
+      
+      case 'L-312':
+        return {
+          labels: [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30],
+          predicted: [105, 103, 100, 98, 95, 93, 92, 89, 87, 85, 82]
+        };
+      
+      default:
+        return {
+          labels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+          predicted: [100, 90, 80, 70, 60, 50, 40, 30, 20, 10]
+        };
+    }
+  }
+  
+  getThermalData() {
+    switch (this.selectedLadle) {
+      case 'L-101':
+        return { maxTemp: 465, avgTemp: 288, hotspots: 1 };
+      case 'L-205':
+        return { maxTemp: 428, avgTemp: 312, hotspots: 1 };
+      case 'L-312':
+        return { maxTemp: 356, avgTemp: 298, hotspots: 0 };
+      default:
+        return { maxTemp: 300, avgTemp: 250, hotspots: 0 };
+    }
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    this.data = {
+      campaigns: [
+        { ladle: 'L-101', startDate: '2024-08-15', heats: 84, expectedHeats: 120, liningType: 'MgO-C' },
+        { ladle: 'L-205', startDate: '2024-09-02', heats: 67, expectedHeats: 110, liningType: 'MgO-C' },
+        { ladle: 'L-312', startDate: '2024-10-10', heats: 23, expectedHeats: 115, liningType: 'Al2O3-C' }
+      ]
+    };
+    
+    dashboard.on('campaignSelected', (event) => {
+      this.selectedLadle = event.detail.ladle;
+      this.updateChart();
+    });
+  }
+  
+  // FIXED: Separate chart update from DOM update
+  updateChart() {
+    if (this.chart) {
+      const rulData = this.getRULDataForLadle(this.selectedLadle);
+      
+      // Update chart data without recreating the chart
+      this.chart.data.labels = rulData.labels;
+      this.chart.data.datasets[0].data = rulData.predicted;
+      this.chart.data.datasets[1].data = Array(rulData.labels.length).fill(15);
+      
+      // Update the chart
+      this.chart.update();
+    }
+    
+    // Update only the non-chart content
+    this.updateContent();
+  }
+  
+  // FIXED: Update content without destroying chart
+  updateContent() {
+    if (this.element) {
+      const content = this.element.querySelector('.component-content');
+      if (content) {
+        // Temporarily store the chart canvas
+        const chartCanvas = document.getElementById(`${this.id}-chart`);
+        const chartParent = chartCanvas?.parentNode;
+        
+        // Update content
+        content.innerHTML = this.render();
+        
+        // If chart canvas was removed, put it back
+        if (chartCanvas && !document.getElementById(`${this.id}-chart`)) {
+          const newChartContainer = content.querySelector('.chart-container');
+          if (newChartContainer) {
+            newChartContainer.appendChild(chartCanvas);
+          }
+        }
+      }
+    }
+  }
+  
+  // FIXED: Standard update method for when component is first created/refreshed
+  update() {
+    if (this.element) {
+      // Destroy existing chart first
+      if (this.chart) {
+        this.chart.destroy();
+        this.chart = null;
+      }
+      
+      // Update the content
+      const content = this.element.querySelector('.component-content');
+      content.innerHTML = this.render();
+      
+      // Recreate chart
+      this.attachEventListeners();
+    }
+  }
+  
+  destroy() {
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+    super.destroy();
+  }
+}
+
+class CampaignDetailComponentEnhanced extends DashboardComponent {
+  constructor(id, title, config) {
+    super(id, title, config);
+    this.selectedLadle = 'L-101';
+    this.chart = null;
+  }
+  
+  render() {
+    const campaign = this.data?.campaigns?.find(c => c.ladle === this.selectedLadle) || {};
+    
+    return `
+      <div class="space-y-4">
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">Campaign Info</h4>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div>Started: <span class="font-medium">${campaign.startDate || 'N/A'}</span></div>
+            <div>Lining: <span class="font-medium">${campaign.liningType || 'N/A'}, 180mm</span></div>
+            <div>Expected: <span class="font-medium">${campaign.expectedHeats || 0} heats</span></div>
+            <div>Completed: <span class="font-medium">${campaign.heats || 0} heats (${Math.round((campaign.heats || 0) / (campaign.expectedHeats || 1) * 100)}%)</span></div>
+          </div>
+        </div>
+        
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">RUL Analysis - ${this.selectedLadle}</h4>
+          <div class="chart-container" style="position: relative; height: 160px;">
+            <canvas id="${this.id}-chart"></canvas>
+          </div>
+          <div class="mt-2 text-xs text-gray-600 text-center">
+            Current RUL: <span class="font-bold text-purple-600">${this.getCurrentRUL()} heats</span> | 
+            Confidence: <span class="font-bold">${this.getConfidence()}%</span>
+          </div>
+        </div>
+        
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">Thermal Summary</h4>
+          <div class="space-y-1 text-sm">
+            <div class="flex justify-between">
+              <span>Max Shell Temp:</span>
+              <span class="font-bold text-red-600">${this.getThermalData().maxTemp}°C</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Avg Shell Temp:</span>
+              <span>${this.getThermalData().avgTemp}°C</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Active Hotspots:</span>
+              <span class="font-bold text-red-600">${this.getThermalData().hotspots}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="pt-2 border-t">
+          <div class="grid grid-cols-2 gap-2">
+            <button class="px-3 py-2 bg-blue-600 text-white text-sm rounded">View Thermal</button>
+            <button class="px-3 py-2 bg-gray-600 text-white text-sm rounded">Schedule Maintenance</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  attachEventListeners() {
+    setTimeout(() => {
+      this.createChart();
+    }, 200);
+  }
+  
+  createChart() {
+    const canvas = document.getElementById(`${this.id}-chart`);
+    if (!canvas || this.chart) return;
+    
+    const ctx = canvas.getContext('2d');
+    const rulData = this.getRULDataForLadle(this.selectedLadle);
+    
+    this.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: rulData.labels,
+        datasets: [{
+          label: 'Predicted RUL',
+          data: rulData.predicted,
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3
+        }, {
+          label: 'Confidence Upper',
+          data: rulData.upperBand,
+          borderColor: 'rgba(139, 92, 246, 0.3)',
+          backgroundColor: 'transparent',
+          borderWidth: 1,
+          borderDash: [3, 3],
+          fill: false,
+          pointRadius: 0
+        }, {
+          label: 'Confidence Lower',
+          data: rulData.lowerBand,
+          borderColor: 'rgba(139, 92, 246, 0.3)',
+          backgroundColor: 'rgba(139, 92, 246, 0.05)',
+          borderWidth: 1,
+          borderDash: [3, 3],
+          fill: '-1',
+          pointRadius: 0
+        }, {
+          label: 'Critical Threshold',
+          data: Array(rulData.labels.length).fill(15),
+          borderColor: '#ef4444',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          fill: false,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: { font: { size: 9 } }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Remaining Heats',
+              font: { size: 10 }
+            },
+            ticks: { font: { size: 9 } }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Heat Number',
+              font: { size: 10 }
+            },
+            ticks: { font: { size: 9 } }
+          }
+        }
+      }
+    });
+  }
+  
+  getCurrentRUL() {
+    switch (this.selectedLadle) {
+      case 'L-101': return 7;
+      case 'L-205': return 43;
+      case 'L-312': return 92;
+      default: return 0;
+    }
+  }
+  
+  getConfidence() {
+    switch (this.selectedLadle) {
+      case 'L-101': return 94;
+      case 'L-205': return 87;
+      case 'L-312': return 82;
+      default: return 85;
+    }
+  }
+  
+  getRULDataForLadle(ladle) {
+    switch (ladle) {
+      case 'L-101':
+        const predicted = [50, 45, 38, 32, 25, 18, 12, 7, 3, 1, 0];
+        return {
+          labels: [70, 72, 74, 76, 78, 80, 82, 84, 86, 88, 90],
+          predicted: predicted,
+          upperBand: predicted.map(val => val + 3),
+          lowerBand: predicted.map(val => Math.max(0, val - 3))
+        };
+      
+      case 'L-205':
+        const predicted205 = [65, 62, 58, 54, 50, 46, 43, 39, 35, 31, 27];
+        return {
+          labels: [55, 57, 59, 61, 63, 65, 67, 69, 71, 73, 75],
+          predicted: predicted205,
+          upperBand: predicted205.map(val => val + 5),
+          lowerBand: predicted205.map(val => Math.max(0, val - 5))
+        };
+      
+      case 'L-312':
+        const predicted312 = [105, 103, 100, 98, 95, 93, 92, 89, 87, 85, 82];
+        return {
+          labels: [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30],
+          predicted: predicted312,
+          upperBand: predicted312.map(val => val + 8),
+          lowerBand: predicted312.map(val => Math.max(0, val - 8))
+        };
+      
+      default:
+        return {
+          labels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+          predicted: [100, 90, 80, 70, 60, 50, 40, 30, 20, 10],
+          upperBand: [105, 95, 85, 75, 65, 55, 45, 35, 25, 15],
+          lowerBand: [95, 85, 75, 65, 55, 45, 35, 25, 15, 5]
+        };
+    }
+  }
+  
+  getThermalData() {
+    switch (this.selectedLadle) {
+      case 'L-101': return { maxTemp: 465, avgTemp: 288, hotspots: 1 };
+      case 'L-205': return { maxTemp: 428, avgTemp: 312, hotspots: 1 };
+      case 'L-312': return { maxTemp: 356, avgTemp: 298, hotspots: 0 };
+      default: return { maxTemp: 300, avgTemp: 250, hotspots: 0 };
+    }
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    this.data = {
+      campaigns: [
+        { ladle: 'L-101', startDate: '2024-08-15', heats: 84, expectedHeats: 120, liningType: 'MgO-C' },
+        { ladle: 'L-205', startDate: '2024-09-02', heats: 67, expectedHeats: 110, liningType: 'MgO-C' },
+        { ladle: 'L-312', startDate: '2024-10-10', heats: 23, expectedHeats: 115, liningType: 'Al2O3-C' }
+      ]
+    };
+    
+    dashboard.on('campaignSelected', (event) => {
+      this.selectedLadle = event.detail.ladle;
+      this.updateChart();
+    });
+  }
+  
+  updateChart() {
+    if (this.chart) {
+      const rulData = this.getRULDataForLadle(this.selectedLadle);
+      this.chart.data.labels = rulData.labels;
+      this.chart.data.datasets[0].data = rulData.predicted;
+      this.chart.data.datasets[1].data = rulData.upperBand;
+      this.chart.data.datasets[2].data = rulData.lowerBand;
+      this.chart.data.datasets[3].data = Array(rulData.labels.length).fill(15);
+      this.chart.update();
+    }
+    
+    // Update content without destroying chart
+    this.updateContent();
+  }
+  
+  updateContent() {
+    if (this.element) {
+      // Just update the text content, not the chart area
+      const content = this.element.querySelector('.component-content');
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = this.render();
+      
+      // Update everything except the chart container
+      const elements = content.children;
+      const newElements = tempDiv.children;
+      
+      for (let i = 0; i < elements.length; i++) {
+        if (!elements[i].classList.contains('chart-container')) {
+          elements[i].innerHTML = newElements[i].innerHTML;
+        }
+      }
+    }
+  }
+  
+  update() {
+    if (this.element) {
+      if (this.chart) {
+        this.chart.destroy();
+        this.chart = null;
+      }
+      
+      const content = this.element.querySelector('.component-content');
+      content.innerHTML = this.render();
+      this.attachEventListeners();
+    }
+  }
+  
+  destroy() {
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+    super.destroy();
+  }
+}
+
+class PlaceholderComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="text-center text-gray-500">
+        <div class="text-sm font-medium mb-2">${this.title}</div>
+        <div class="text-xs">Component placeholder</div>
+        ${this.config.query ? `<div class="bg-gray-50 rounded p-2 mt-2 text-xs font-mono text-left">${this.config.query}</div>` : ''}
+      </div>
+    `;
+  }
+}
+
+class CampaignPerformanceComponent extends DashboardComponent {
+  constructor(id, title, config) {
+    super(id, title, config);
+    this.chart = null;
+  }
+
+  render() {
+    return `
+      <div class="space-y-4">
+        <!-- Performance Chart -->
+        <div class="chart-container" style="position: relative; height: 200px;">
+          <canvas id="${this.id}-chart"></canvas>
+        </div>
+        
+        <!-- Performance Summary -->
+        <div class="grid grid-cols-3 gap-3 text-xs">
+          <div class="text-center">
+            <div class="font-bold text-green-600">${this.data?.avgPerformance || '94.2'}%</div>
+            <div class="text-gray-600">Avg Performance</div>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-blue-600">${this.data?.totalHeats || '1,247'}</div>
+            <div class="text-gray-600">Total Heats</div>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-purple-600">${this.data?.efficiency || '87.3'}%</div>
+            <div class="text-gray-600">Thermal Efficiency</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  attachEventListeners() {
+    setTimeout(() => {
+      this.createChart();
+    }, 200);
+  }
+  
+  createChart() {
+    const canvas = document.getElementById(`${this.id}-chart`);
+    if (!canvas || this.chart) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    this.chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: this.data?.campaigns?.map(c => c.ladle) || ['L-101', 'L-205', 'L-312', 'L-456', 'L-789'],
+        datasets: [{
+          label: 'Expected Heats',
+          data: this.data?.campaigns?.map(c => c.expected) || [120, 110, 115, 125, 100],
+          backgroundColor: 'rgba(59, 130, 246, 0.6)',
+          borderColor: '#3b82f6',
+          borderWidth: 1
+        }, {
+          label: 'Actual Heats',
+          data: this.data?.campaigns?.map(c => c.actual) || [84, 67, 23, 132, 95],
+          backgroundColor: 'rgba(16, 185, 129, 0.6)',
+          borderColor: '#10b981',
+          borderWidth: 1
+        }, {
+          label: 'Performance %',
+          data: this.data?.campaigns?.map(c => c.performance) || [70, 61, 20, 106, 95],
+          type: 'line',
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          borderWidth: 2,
+          fill: false,
+          yAxisID: 'y1',
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Campaign Performance: Expected vs Actual Heats',
+            font: { size: 12 }
+          },
+          legend: {
+            position: 'bottom',
+            labels: { font: { size: 10 } }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Number of Heats',
+              font: { size: 10 }
+            },
+            ticks: { font: { size: 9 } }
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            title: {
+              display: true,
+              text: 'Performance %',
+              font: { size: 10 }
+            },
+            ticks: { font: { size: 9 } },
+            grid: {
+              drawOnChartArea: false,
+            },
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Ladle',
+              font: { size: 10 }
+            },
+            ticks: { font: { size: 9 } }
+          }
+        }
+      }
+    });
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    this.data = {
+      campaigns: [
+        { ladle: 'L-101', expected: 120, actual: 84, performance: 70 },
+        { ladle: 'L-205', expected: 110, actual: 67, performance: 61 },
+        { ladle: 'L-312', expected: 115, actual: 23, performance: 20 },
+        { ladle: 'L-456', expected: 125, actual: 132, performance: 106 },
+        { ladle: 'L-789', expected: 100, actual: 95, performance: 95 }
+      ],
+      avgPerformance: '80.4',
+      totalHeats: '401',
+      efficiency: '87.3'
+    };
+  }
+  
+  update() {
+    if (this.element) {
+      if (this.chart) {
+        this.chart.destroy();
+        this.chart = null;
+      }
+      
+      const content = this.element.querySelector('.component-content');
+      content.innerHTML = this.render();
+      this.attachEventListeners();
+    }
+  }
+  
+  destroy() {
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+    super.destroy();
+  }
+}
+
+class PredictiveAlertsComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="component-content">
+        <div class="space-y-3 text-sm">
+          <div class="p-2 bg-red-50 border border-red-200 rounded">
+            <div class="font-medium text-red-800">L-101 RUL Critical</div>
+            <div class="text-red-600">Predicted failure in 7 heats</div>
+          </div>
+          <div class="p-2 bg-amber-50 border border-amber-200 rounded">
+            <div class="font-medium text-amber-800">L-205 Thermal Trend</div>
+            <div class="text-amber-600">Hotspot formation likely</div>
+          </div>
+          <div class="p-2 bg-blue-50 border border-blue-200 rounded">
+            <div class="font-medium text-blue-800">L-789 Maintenance</div>
+            <div class="text-blue-600">Schedule gunning soon</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+class LiningPerformanceComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="component-content">
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span>MgO-C</span>
+              <span class="font-medium">avg 118 heats</span>
+            </div>
+            <div class="bg-green-200 h-2 rounded">
+              <div class="bg-green-600 h-2 rounded" style="width: 85%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span>Al2O3-C</span>
+              <span class="font-medium">avg 95 heats</span>
+            </div>
+            <div class="bg-blue-200 h-2 rounded">
+              <div class="bg-blue-600 h-2 rounded" style="width: 72%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span>Dolomite</span>
+              <span class="font-medium">avg 67 heats</span>
+            </div>
+            <div class="bg-amber-200 h-2 rounded">
+              <div class="bg-amber-600 h-2 rounded" style="width: 55%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+class NeedsAttentionComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="component-content">
+        <div class="space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-sm font-medium">L-101 Campaign</span>
+            <span class="campaign-status status-critical">RUL: 7 heats</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm font-medium">L-205 Campaign</span>
+            <span class="campaign-status status-ending">Hot Trends</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm font-medium">L-312 Campaign</span>
+            <span class="campaign-status status-ending">Maintenance Due</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }       
+}
+
+class RecentActivityComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="component-content">
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span>L-101 Heat #84</span>
+            <span class="text-gray-500">2 hrs ago</span>
+          </div>
+          <div class="flex justify-between">
+            <span>L-205 Maintenance</span>
+            <span class="text-gray-500">4 hrs ago</span>
+          </div>
+          <div class="flex justify-between">
+            <span>L-312 Heat #67</span>
+            <span class="text-gray-500">6 hrs ago</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+// =============================================================================
+// THERMAL SCAN COMPONENTS
+// =============================================================================
+
+class ThermalScanSummaryComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="text-center">
+        <div class="text-3xl font-bold text-blue-600 mb-2">${this.data?.count || '...'}</div>
+        <div class="text-sm text-gray-600">Today's Scans</div>
+        <div class="text-xs text-gray-400 mt-1">Across ${this.data?.ladles || 0} active ladles</div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    this.data = { count: 47, ladles: 12 };
+  }
+}
+
+class CriticalHotspotsCountComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="text-center">
+        <div class="text-3xl font-bold text-red-600 mb-2">${this.data?.count || '...'}</div>
+        <div class="text-sm text-gray-600">Critical Hotspots</div>
+        <div class="text-xs text-gray-400 mt-1">Requires immediate attention</div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    this.data = { count: 3 };
+  }
+}
+
+class AvgTemperatureComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="text-center">
+        <div class="text-3xl font-bold text-orange-600 mb-2">${this.data?.temp || '...'}°C</div>
+        <div class="text-sm text-gray-600">Fleet Average</div>
+        <div class="text-xs text-gray-400 mt-1">${this.data?.change || '+0'}°C from yesterday</div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    this.data = { temp: 312, change: '+8' };
+  }
+}
+
+class ScanCoverageComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="text-center">
+        <div class="text-3xl font-bold text-green-600 mb-2">${this.data?.percentage || '...'}%</div>
+        <div class="text-sm text-gray-600">Scan Coverage</div>
+        <div class="text-xs text-gray-400 mt-1">${this.data?.actual || 0} of ${this.data?.expected || 0} expected scans</div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 350));
+    this.data = { percentage: 94, actual: 47, expected: 50 };
+  }
+}
+
+class ThermalImageViewerComponent extends DashboardComponent {
+  constructor(id, title, config) {
+    super(id, title, config);
+    this.selectedScan = 'L-101-84';
+  }
+  
+  render() {
+    return `
+      <div class="space-y-4">
+        <!-- ROI Analysis Tools -->
+        <div class="flex gap-2 flex-wrap pb-3 border-b">
+          <button class="tool-button active" data-tool="select">
+            <span class="text-xs">🔍 Select</span>
+          </button>
+          <button class="tool-button" data-tool="roi">
+            <span class="text-xs">📐 ROI Tool</span>
+          </button>
+          <button class="tool-button" data-tool="hotspot">
+            <span class="text-xs">🔥 Hotspot</span>
+          </button>
+          <button class="tool-button" data-tool="line">
+            <span class="text-xs">📏 Line Profile</span>
+          </button>
+          <div class="ml-auto text-xs text-gray-500">
+            Source: ThermalCam_01
+          </div>
+        </div>
+        
+        <!-- Thermal Image Display -->
+        <div class="relative bg-gray-900 rounded-lg overflow-hidden">
+        <div class="relative h-64 w-full">
+            <img 
+            src="${this.data?.thermalImagePath || '/thermal/2024/12/L101_H84.jpg'}"
+            alt="Thermal scan ${this.selectedScan}"
+            class="w-full h-full object-contain bg-gray-900"
+            style="image-rendering: pixelated;"
+            onload="this.classList.remove('opacity-50')"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
+            />
+            
+            <!-- Fallback placeholder (shown if image fails to load) -->
+            <div class="absolute inset-0 hidden items-center justify-center text-white bg-gray-800">
+            <div class="text-center">
+                <div class="mb-2">⚠️ Image Loading Error</div>
+                <div class="text-xs opacity-75">thermal_image_ref: ${this.data?.thermalImagePath || '/thermal/2024/12/L101_H84.jpg'}</div>
+            </div>
+            </div>
+        </div>
+        
+        <!-- ROI Overlays -->
+        <div class="absolute inset-0 pointer-events-none">
+            <!-- Slagline North ROI -->
+            <div class="absolute border-2 border-red-500 bg-red-500 bg-opacity-10 rounded" 
+                style="left: 35%; top: 15%; width: 30%; height: 20%;">
+            <div class="absolute -top-6 left-0 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs">
+                Slagline_North - 465°C
+            </div>
+            </div>
+            
+            <!-- Bottom Center ROI -->
+            <div class="absolute border-2 border-blue-500 bg-blue-500 bg-opacity-10 rounded" 
+                style="left: 40%; top: 70%; width: 20%; height: 15%;">
+            <div class="absolute -top-6 left-0 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs">
+                Bottom_Center - 288°C
+            </div>
+            </div>
+        </div>
+        </div>
+        
+        <!-- Image Statistics -->
+        <div class="grid grid-cols-3 gap-4 text-sm">
+          <div>
+            <span class="text-gray-600">Max Temp:</span>
+            <div class="font-bold text-red-600">${this.data?.maxTemp || '...'}°C</div>
+          </div>
+          <div>
+            <span class="text-gray-600">Avg Temp:</span>
+            <div class="font-bold">${this.data?.avgTemp || '...'}°C</div>
+          </div>
+          <div>
+            <span class="text-gray-600">Scan Time:</span>
+            <div class="font-bold">${this.data?.scanTime || '...'}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  attachEventListeners() {
+    // Tool selection handling
+    this.element.querySelectorAll('[data-tool]').forEach(button => {
+      button.addEventListener('click', () => {
+        this.element.querySelectorAll('[data-tool]').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        console.log('Selected tool:', button.dataset.tool);
+      });
+    });
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 600));
+    this.data = { 
+        maxTemp: 465, 
+        avgTemp: 288, 
+        scanTime: '17:13:04',
+        thermalImagePath: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRIRvfgfTXkmj8XyntCz0QgNySKxqGZafEGKg&s'
+    };
+    
+    // Listen for scan selection events
+    dashboard.on('scanSelected', (event) => {
+        this.selectedScan = event.detail.scanId;
+        // Update image path based on selected scan
+        this.data.thermalImagePath = `/thermal/images/${event.detail.scanId}.jpg`;
+        console.log('Loading thermal image for:', this.selectedScan);
+        this.update();
+    });
+  }
+}
+
+class ScanDetailsComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="space-y-3 text-sm">
+        <div class="grid grid-cols-2 gap-2">
+          <div>Ladle: <span class="font-medium">${this.data?.ladle || 'L-101'}</span></div>
+          <div>Campaign: <span class="font-medium">${this.data?.campaign || '84'}</span></div>
+          <div>Heat #: <span class="font-medium">${this.data?.heat || '84'}/120</span></div>
+          <div>Steel Grade: <span class="font-medium">${this.data?.grade || '304L'}</span></div>
+          <div>Tapping Temp: <span class="font-medium">${this.data?.tappingTemp || '1,650'}°C</span></div>
+          <div>Hold Time: <span class="font-medium">${this.data?.holdTime || '47'} mins</span></div>
+        </div>
+        
+        <div class="pt-2 border-t">
+          <div class="text-xs text-gray-600">
+            Scan ID: ${this.data?.scanId || '2847'}<br>
+            Source: ${this.data?.source || 'ThermalCam_01'}<br>
+            Timestamp: ${this.data?.timestamp || '2024-12-20 17:13:04'}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 250));
+    this.data = {
+      ladle: 'L-101',
+      campaign: '84',
+      heat: '84',
+      grade: '304L',
+      tappingTemp: '1,650',
+      holdTime: '47',
+      scanId: '2847',
+      source: 'ThermalCam_01',
+      timestamp: '2024-12-20 17:13:04'
+    };
+  }
+}
+
+class HotspotListComponent extends DashboardComponent {
+  render() {
+    if (!this.data?.hotspots) {
+      return '<div class="text-center text-gray-500">Loading hotspots...</div>';
+    }
+    
+    return `
+      <div class="space-y-3">
+        ${this.data.hotspots.map(hotspot => `
+          <div class="p-3 rounded ${hotspot.severity === 'critical' ? 'bg-red-50 border border-red-200' : 
+                                    hotspot.severity === 'warning' ? 'bg-yellow-50 border border-yellow-200' :
+                                    'bg-green-50 border border-green-200'}">
+            <div class="flex justify-between items-center">
+              <div>
+                <div class="font-medium ${hotspot.severity === 'critical' ? 'text-red-800' :
+                                        hotspot.severity === 'warning' ? 'text-yellow-800' : 'text-green-800'}">
+                  ${hotspot.location}
+                </div>
+                <div class="text-xs ${hotspot.severity === 'critical' ? 'text-red-600' :
+                                    hotspot.severity === 'warning' ? 'text-yellow-600' : 'text-green-600'}">
+                  ${hotspot.temp}°C • ${hotspot.area} m² • ${hotspot.classification}
+                </div>
+              </div>
+              <div class="text-xs font-medium uppercase">
+                ${hotspot.severity}
+              </div>
+            </div>
+          </div>
+        `).join('')}
+        
+        <div class="text-center pt-2">
+          <button class="px-3 py-1 bg-blue-600 text-white rounded text-xs">
+            View All Hotspots
+          </button>
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 700));
+    this.data = {
+      hotspots: [
+        {
+          location: 'Slagline_North',
+          temp: 465,
+          area: '0.045',
+          classification: 'Growing',
+          severity: 'critical'
+        },
+        {
+          location: 'Bottom_Center',
+          temp: 388,
+          area: '0.023',
+          classification: 'Stable',
+          severity: 'warning'
+        }
+      ]
+    };
+  }
+}
+
+class ThermalScanTableComponent extends DashboardComponent {
+  render() {
+    if (!this.data?.scans) {
+      return '<div class="text-center text-gray-500">Loading thermal scans...</div>';
+    }
+    
+    return `
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-200">
+              <th class="text-left py-2">Ladle</th>
+              <th class="text-left py-2">Heat #</th>
+              <th class="text-left py-2">Scan Time</th>
+              <th class="text-left py-2">Max Temp</th>
+              <th class="text-left py-2">Avg Temp</th>
+              <th class="text-left py-2">Hotspots</th>
+              <th class="text-left py-2">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            ${this.data.scans.map((scan, index) => `
+              <tr class="scan-row hover:bg-gray-50 cursor-pointer ${index === 0 ? 'selected bg-blue-50' : ''}" data-scan-id="${scan.scanId}">
+                <td class="py-2 font-medium">${scan.ladle}</td>
+                <td class="py-2">${scan.heat}</td>
+                <td class="py-2 text-gray-600">${scan.scanTime}</td>
+                <td class="py-2 font-bold ${scan.maxTempClass}">${scan.maxTemp}°C</td>
+                <td class="py-2">${scan.avgTemp}°C</td>
+                <td class="py-2">${scan.hotspots}</td>
+                <td class="py-2"><span class="px-2 py-1 ${scan.statusClass} rounded text-xs">${scan.status}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+  
+  attachEventListeners() {
+    this.element.querySelectorAll('.scan-row').forEach(row => {
+      row.addEventListener('click', () => {
+        // Remove selection from all rows
+        this.element.querySelectorAll('.scan-row').forEach(r => {
+          r.classList.remove('selected', 'bg-blue-50');
+        });
+        
+        // Add selection to clicked row
+        row.classList.add('selected', 'bg-blue-50');
+        
+        const scanId = row.dataset.scanId;
+        dashboard.emit('scanSelected', { scanId });
+      });
+    });
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 800));
+    this.data = {
+      scans: [
+        {
+          scanId: 'L-101-84',
+          ladle: 'L-101',
+          heat: '84',
+          scanTime: '17:13:04',
+          maxTemp: 465,
+          maxTempClass: 'text-red-600',
+          avgTemp: 288,
+          hotspots: 2,
+          status: 'Critical',
+          statusClass: 'bg-red-100 text-red-800'
+        },
+        {
+          scanId: 'L-205-67',
+          ladle: 'L-205',
+          heat: '67',
+          scanTime: '16:45:22',
+          maxTemp: 428,
+          maxTempClass: 'text-orange-600',
+          avgTemp: 312,
+          hotspots: 1,
+          status: 'Warning',
+          statusClass: 'bg-yellow-100 text-yellow-800'
+        },
+        {
+          scanId: 'L-312-23',
+          ladle: 'L-312',
+          heat: '23',
+          scanTime: '15:28:15',
+          maxTemp: 356,
+          maxTempClass: 'text-green-600',
+          avgTemp: 298,
+          hotspots: 0,
+          status: 'Normal',
+          statusClass: 'bg-green-100 text-green-800'
+        }
+      ]
+    };
+  }
+}
+
+class ThermalTrendsComponent extends DashboardComponent {
+  constructor(id, title, config) {
+    super(id, title, config);
+    this.chart = null;
+  }
+
+  render() {
+    return `
+      <div class="space-y-4">
+        <div class="chart-container" style="position: relative; height: 200px;">
+          <canvas id="${this.id}-chart"></canvas>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span class="text-gray-600">Trend:</span>
+            <div class="font-bold ${this.data?.trendClass || 'text-red-600'}">${this.data?.trend || '↗ +18°C'}</div>
+          </div>
+          <div>
+            <span class="text-gray-600">Rate:</span>
+            <div class="font-bold">${this.data?.rate || '+4.5°C/heat'}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  attachEventListeners() {
+    // Create chart after DOM is ready
+    setTimeout(() => {
+      this.createChart();
+    }, 100);
+  }
+  
+  createChart() {
+    const canvas = document.getElementById(`${this.id}-chart`);
+    if (!canvas || this.chart) return;
+    
+    const ctx = canvas.getContext('2d');
+    this.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['Heat 75', 'Heat 76', 'Heat 77', 'Heat 78', 'Heat 79', 'Heat 80', 'Heat 81', 'Heat 82', 'Heat 83', 'Heat 84'],
+        datasets: [{
+          label: 'Max Temperature',
+          data: [398, 412, 425, 434, 445, 456, 462, 458, 461, 465],
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            title: {
+              display: true,
+              text: 'Temperature (°C)'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Heat Number'
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 450));
+    this.data = {
+      trend: '↗ +18°C',
+      trendClass: 'text-red-600',
+      rate: '+4.5°C/heat'
+    };
+  }
+  
+  // IMPORTANT: Override update method to handle chart properly
+  update() {
+    if (this.element) {
+      // Destroy existing chart before updating
+      if (this.chart) {
+        this.chart.destroy();
+        this.chart = null;
+      }
+      
+      // Update the content
+      const content = this.element.querySelector('.component-content');
+      content.innerHTML = this.render();
+      
+      // Recreate chart
+      this.attachEventListeners();
+    }
+  }
+  
+  destroy() {
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+    super.destroy();
+  }
+}
+
+class HotspotAnalysisComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="space-y-4">
+        <!-- Embedded Chart -->
+        <div class="chart-container" style="position: relative; height: 180px;">
+          <canvas id="${this.id}-chart"></canvas>
+        </div>
+        
+        <!-- Your existing content -->
+        <div class="grid grid-cols-3 gap-4 text-xs">
+          <div class="text-center">
+            <div class="font-bold text-red-600">${this.data?.slagline || '67'}%</div>
+            <div class="text-gray-600">Slagline</div>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-orange-600">${this.data?.bottom || '23'}%</div>
+            <div class="text-gray-600">Bottom</div>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-yellow-600">${this.data?.sidewall || '10'}%</div>
+            <div class="text-gray-600">Sidewall</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  attachEventListeners() {
+    // Create chart after DOM is ready
+    setTimeout(() => {
+      this.createChart();
+    }, 100);
+  }
+  
+  createChart() {
+    const canvas = document.getElementById(`${this.id}-chart`);
+    if (!canvas || this.chart) return;
+    
+    const ctx = canvas.getContext('2d');
+    this.chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Slagline North', 'Slagline South', 'Bottom Center', 'Sidewall East', 'Sidewall West'],
+        datasets: [{
+          label: 'Hotspot Frequency',
+          data: [42, 28, 18, 8, 4],
+          backgroundColor: [
+            '#ef4444',  // Red
+            '#f59e0b',  // Orange  
+            '#3b82f6',  // Blue
+            '#8b5cf6',  // Purple
+            '#10b981'   // Green
+          ],
+          borderWidth: 1,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Number of Hotspots'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Location'
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 550));
+    this.data = { slagline: 67, bottom: 23, sidewall: 10 };
+  }
+  
+  update() {
+    super.update();
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+  }
+  
+  destroy() {
+    if (this.chart) {
+      this.chart.destroy();
+    }
+    super.destroy();
+  }
+}
+
+class ThermalHealthScoreComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="space-y-4">
+        <div class="grid grid-cols-4 gap-4 text-center">
+          ${(this.data?.ladles || []).map(ladle => `
+            <div>
+              <div class="text-xl font-bold ${ladle.scoreClass}">${ladle.score}</div>
+              <div class="text-xs text-gray-600">${ladle.name}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="text-center text-xs text-gray-500">
+          Based on temperature trends, hotspot frequency, RUL correlation
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 650));
+    this.data = {
+      ladles: [
+        { name: 'L-312', score: 87, scoreClass: 'text-green-600' },
+        { name: 'L-205', score: 64, scoreClass: 'text-yellow-600' },
+        { name: 'L-101', score: 32, scoreClass: 'text-red-600' },
+        { name: 'L-456', score: 91, scoreClass: 'text-green-600' }
+      ]
+    };
+  }
+}
+
+// =============================================================================
+// MAINTENANCE COMPONENTS
+// =============================================================================
+
+class MaintenanceOverviewComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="grid grid-cols-2 gap-4 text-center">
+        <div>
+          <div class="text-2xl font-bold text-red-600">${this.data?.urgent || '...'}</div>
+          <div class="text-xs text-gray-600">Urgent Actions</div>
+        </div>
+        <div>
+          <div class="text-2xl font-bold text-yellow-600">${this.data?.scheduled || '...'}</div>
+          <div class="text-xs text-gray-600">Scheduled Today</div>
+        </div>
+        <div>
+          <div class="text-2xl font-bold text-blue-600">${this.data?.completed || '...'}</div>
+          <div class="text-xs text-gray-600">Completed</div>
+        </div>
+        <div>
+          <div class="text-2xl font-bold text-green-600">${this.data?.efficiency || '...'}%</div>
+          <div class="text-xs text-gray-600">On Schedule</div>
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    this.data = { urgent: 3, scheduled: 7, completed: 12, efficiency: 89 };
+  }
+}
+
+class UpcomingMaintenanceComponent extends DashboardComponent {
+  render() {
+    if (!this.data?.maintenance) {
+      return '<div class="text-center text-gray-500">Loading maintenance schedule...</div>';
+    }
+    
+    return `
+      <div class="space-y-3">
+        ${this.data.maintenance.map(item => `
+          <div class="p-3 rounded border-l-4 ${item.priorityClass}">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="font-medium">${item.ladle} - ${item.type}</div>
+                <div class="text-sm text-gray-600">${item.location}</div>
+                <div class="text-xs text-gray-500">${item.reason}</div>
+              </div>
+              <div class="text-right text-sm">
+                <div class="font-medium">${item.dueDate}</div>
+                <div class="text-xs ${item.priorityTextClass}">${item.priority}</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+        
+        <div class="text-center pt-2">
+          <button class="px-3 py-2 bg-blue-600 text-white rounded text-sm">
+            View Full Schedule
+          </button>
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 600));
+    this.data = {
+      maintenance: [
+        {
+          ladle: 'L-101',
+          type: 'Emergency Gunning',
+          location: 'Slagline_North',
+          reason: 'Critical hotspot 465°C',
+          dueDate: 'Today 18:00',
+          priority: 'URGENT',
+          priorityClass: 'border-red-500 bg-red-50',
+          priorityTextClass: 'text-red-600'
+        },
+        {
+          ladle: 'L-205',
+          type: 'Preventive Patching',
+          location: 'Bottom_Center',
+          reason: 'Thermal trend analysis',
+          dueDate: 'Tomorrow',
+          priority: 'HIGH',
+          priorityClass: 'border-yellow-500 bg-yellow-50',
+          priorityTextClass: 'text-yellow-600'
+        },
+        {
+          ladle: 'L-312',
+          type: 'Laser Scan',
+          location: 'Full Shell',
+          reason: 'Scheduled inspection',
+          dueDate: 'Dec 23',
+          priority: 'ROUTINE',
+          priorityClass: 'border-green-500 bg-green-50',
+          priorityTextClass: 'text-green-600'
+        }
+      ]
+    };
+  }
+}
+
+class ActiveWorkOrdersComponent extends DashboardComponent {
+  render() {
+    if (!this.data?.workOrders) {
+      return '<div class="text-center text-gray-500">Loading work orders...</div>';
+    }
+    
+    return `
+      <div class="space-y-3">
+        ${this.data.workOrders.map(order => `
+          <div class="p-3 bg-gray-50 rounded border">
+            <div class="flex justify-between items-center mb-2">
+              <div class="font-medium">WO-${order.id}</div>
+              <span class="px-2 py-1 text-xs rounded ${order.statusClass}">${order.status}</span>
+            </div>
+            <div class="text-sm">
+              <div>${order.ladle} - ${order.description}</div>
+              <div class="text-gray-600">Crew: ${order.crew} | Est: ${order.duration}</div>
+            </div>
+            <div class="mt-2 text-xs text-gray-500">
+              Started: ${order.startTime}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    this.data = {
+      workOrders: [
+        {
+          id: '2024-1247',
+          ladle: 'L-456',
+          description: 'Gunning repair - sidewall damage',
+          crew: 'Team A',
+          duration: '3 hrs',
+          startTime: '14:30',
+          status: 'In Progress',
+          statusClass: 'bg-blue-100 text-blue-800'
+        },
+        {
+          id: '2024-1248',
+          ladle: 'L-789',
+          description: 'Visual inspection post-gunning',
+          crew: 'Team B',
+          duration: '1 hr',
+          startTime: '16:00',
+          status: 'Starting Soon',
+          statusClass: 'bg-yellow-100 text-yellow-800'
+        }
+      ]
+    };
+  }
+}
+
+class MaintenancePlannerComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="space-y-4">
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-2 gap-2">
+          <button class="px-3 py-2 bg-red-600 text-white text-sm rounded">
+            Emergency Repair
+          </button>
+          <button class="px-3 py-2 bg-blue-600 text-white text-sm rounded">
+            Schedule Maintenance
+          </button>
+          <button class="px-3 py-2 bg-green-600 text-white text-sm rounded">
+            Plan Reline
+          </button>
+          <button class="px-3 py-2 bg-purple-600 text-white text-sm rounded">
+            Laser Scan
+          </button>
+        </div>
+        
+        <!-- Maintenance Recommendations -->
+        <div class="border-t pt-3">
+          <h4 class="font-medium text-gray-900 mb-2">AI Recommendations</h4>
+          <div class="space-y-2 text-sm">
+            <div class="p-2 bg-red-50 border border-red-200 rounded">
+              <div class="font-medium text-red-800">L-101 Urgent Action</div>
+              <div class="text-red-600">Gunning recommended within 6 hours</div>
+            </div>
+            <div class="p-2 bg-yellow-50 border border-yellow-200 rounded">
+              <div class="font-medium text-yellow-800">L-205 Preventive</div>
+              <div class="text-yellow-600">Schedule patching within 2 days</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Resource Status -->
+        <div class="border-t pt-3">
+          <h4 class="font-medium text-gray-900 mb-2">Resource Status</h4>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>Crew A: <span class="text-green-600">Available</span></div>
+            <div>Crew B: <span class="text-red-600">Busy until 18:00</span></div>
+            <div>Gunning Mat: <span class="text-green-600">In Stock</span></div>
+            <div>MgO-C Bricks: <span class="text-yellow-600">Low Stock</span></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+class MaintenanceHistoryTableComponent extends DashboardComponent {
+  render() {
+    if (!this.data?.history) {
+      return '<div class="text-center text-gray-500">Loading maintenance history...</div>';
+    }
+    
+    return `
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-200">
+              <th class="text-left py-2">Date</th>
+              <th class="text-left py-2">Ladle</th>
+              <th class="text-left py-2">Type</th>
+              <th class="text-left py-2">Location</th>
+              <th class="text-left py-2">Crew</th>
+              <th class="text-left py-2">Duration</th>
+              <th class="text-left py-2">Effectiveness</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            ${this.data.history.map(item => `
+              <tr class="maintenance-row hover:bg-gray-50 cursor-pointer" data-maintenance-id="${item.id}">
+                <td class="py-2">${item.date}</td>
+                <td class="py-2 font-medium">${item.ladle}</td>
+                <td class="py-2">${item.type}</td>
+                <td class="py-2">${item.location}</td>
+                <td class="py-2">${item.crew}</td>
+                <td class="py-2">${item.duration}</td>
+                <td class="py-2">
+                  <span class="px-2 py-1 rounded text-xs ${item.effectivenessClass}">
+                    ${item.effectiveness}
+                  </span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+  
+  attachEventListeners() {
+    this.element.querySelectorAll('.maintenance-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const maintenanceId = row.dataset.maintenanceId;
+        dashboard.emit('maintenanceSelected', { maintenanceId });
+        console.log('Selected maintenance record:', maintenanceId);
+      });
+    });
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 800));
+    this.data = {
+      history: [
+        {
+          id: 'MAINT-1234',
+          date: '2024-12-19',
+          ladle: 'L-312',
+          type: 'Gunning',
+          location: 'Slagline_North',
+          crew: 'Team A',
+          duration: '2.5 hrs',
+          effectiveness: 'Excellent',
+          effectivenessClass: 'bg-green-100 text-green-800'
+        },
+        {
+          id: 'MAINT-1235',
+          date: '2024-12-18',
+          ladle: 'L-205',
+          type: 'Patching',
+          location: 'Bottom_Center',
+          crew: 'Team B',
+          duration: '1.5 hrs',
+          effectiveness: 'Good',
+          effectivenessClass: 'bg-blue-100 text-blue-800'
+        },
+        {
+          id: 'MAINT-1236',
+          date: '2024-12-17',
+          ladle: 'L-101',
+          type: 'Visual Inspection',
+          location: 'Full Shell',
+          crew: 'Team A',
+          duration: '0.5 hrs',
+          effectiveness: 'Fair',
+          effectivenessClass: 'bg-yellow-100 text-yellow-800'
+        }
+      ]
+    };
+  }
+}
+
+class MaintenanceDetailComponent extends DashboardComponent {
+  constructor(id, title, config) {
+    super(id, title, config);
+    this.selectedMaintenance = 'MAINT-1234';
+  }
+  
+  render() {
+    const maintenance = this.data?.maintenanceDetails || {};
+    
+    return `
+      <div class="space-y-4">
+        <!-- Maintenance Info -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">Maintenance Details</h4>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div>Work Order: <span class="font-medium">${maintenance.workOrder || 'WO-2024-1234'}</span></div>
+            <div>Type: <span class="font-medium">${maintenance.type || 'Gunning'}</span></div>
+            <div>Location: <span class="font-medium">${maintenance.location || 'Slagline_North'}</span></div>
+            <div>Campaign: <span class="font-medium">${maintenance.campaign || 'L-312-67'}</span></div>
+          </div>
+        </div>
+        
+        <!-- Before/After Thermal Data -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">Thermal Impact</h4>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="text-center">
+              <div class="text-lg font-bold text-red-600">${maintenance.tempBefore || '445'}°C</div>
+              <div class="text-gray-600">Before Repair</div>
+            </div>
+            <div class="text-center">
+              <div class="text-lg font-bold text-green-600">${maintenance.tempAfter || '312'}°C</div>
+              <div class="text-gray-600">After Repair</div>
+            </div>
+          </div>
+          <div class="text-center text-sm font-medium text-green-600 mt-2">
+            ↓ ${maintenance.tempReduction || '133'}°C Temperature Reduction
+          </div>
+        </div>
+        
+        <!-- Crew & Materials -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">Resources Used</h4>
+          <div class="text-sm space-y-1">
+            <div>Crew: <span class="font-medium">${maintenance.crew || 'Team A (4 technicians)'}</span></div>
+            <div>Duration: <span class="font-medium">${maintenance.duration || '2.5 hours'}</span></div>
+            <div>Materials: <span class="font-medium">${maintenance.materials || 'MgO-C gunning mix (45kg)'}</span></div>
+            <div>Cost: <span class="font-medium">${maintenance.cost || '$2,840'}</span></div>
+          </div>
+        </div>
+        
+        <!-- Notes -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">Technician Notes</h4>
+          <div class="bg-gray-50 p-3 rounded text-sm">
+            ${maintenance.notes || 'Hotspot successfully repaired. Applied 45kg MgO-C gunning mix to affected area. Post-repair thermal scan shows significant temperature reduction. Recommend monitoring for next 3 heats.'}
+          </div>
+        </div>
+        
+        <!-- Follow-up Actions -->
+        <div class="pt-2 border-t">
+          <div class="grid grid-cols-2 gap-2">
+            <button class="px-3 py-2 bg-blue-600 text-white text-sm rounded">Schedule Follow-up</button>
+            <button class="px-3 py-2 bg-gray-600 text-white text-sm rounded">Export Report</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    this.data = {
+      maintenanceDetails: {
+        workOrder: 'WO-2024-1234',
+        type: 'Gunning',
+        location: 'Slagline_North',
+        campaign: 'L-312-67',
+        tempBefore: '445',
+        tempAfter: '312',
+        tempReduction: '133',
+        crew: 'Team A (4 technicians)',
+        duration: '2.5 hours',
+        materials: 'MgO-C gunning mix (45kg)',
+        cost: '$2,840',
+        notes: 'Hotspot successfully repaired. Applied 45kg MgO-C gunning mix to affected area. Post-repair thermal scan shows significant temperature reduction. Recommend monitoring for next 3 heats.'
+      }
+    };
+    
+    // Listen for maintenance selection events
+    dashboard.on('maintenanceSelected', (event) => {
+      this.selectedMaintenance = event.detail.maintenanceId;
+      console.log('Loading maintenance details for:', this.selectedMaintenance);
+      this.update();
+    });
+  }
+}
+
+class MaintenanceMetricsComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="space-y-4">
+        <!-- Monthly Stats -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-3">December 2024</h4>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="text-center">
+              <div class="text-2xl font-bold text-blue-600">${this.data?.totalJobs || '47'}</div>
+              <div class="text-gray-600">Total Jobs</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-green-600">${this.data?.avgEffectiveness || '89'}%</div>
+              <div class="text-gray-600">Effectiveness</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Maintenance Type Breakdown -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">Maintenance Types</h4>
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+              <span>Gunning</span>
+              <span class="font-medium">${this.data?.gunning || '18'} jobs</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div class="bg-blue-600 h-2 rounded-full" style="width: 60%"></div>
+            </div>
+            
+            <div class="flex justify-between text-sm">
+              <span>Patching</span>
+              <span class="font-medium">${this.data?.patching || '12'} jobs</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div class="bg-green-600 h-2 rounded-full" style="width: 40%"></div>
+            </div>
+            
+            <div class="flex justify-between text-sm">
+              <span>Inspections</span>
+              <span class="font-medium">${this.data?.inspections || '17'} jobs</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div class="bg-purple-600 h-2 rounded-full" style="width: 55%"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Cost Analysis -->
+        <div class="border-t pt-3">
+          <h4 class="font-medium text-gray-900 mb-2">Cost Analysis</h4>
+          <div class="text-sm space-y-1">
+            <div class="flex justify-between">
+              <span>Total Cost:</span>
+              <span class="font-bold">${this.data?.totalCost || '$127,340'}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Avg per Job:</span>
+              <span class="font-medium">${this.data?.avgCost || '$2,710'}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Emergency vs Planned:</span>
+              <span class="font-medium text-red-600">${this.data?.emergencyRatio || '23%'} emergency</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 550));
+    this.data = {
+      totalJobs: 47,
+      avgEffectiveness: 89,
+      gunning: 18,
+      patching: 12,
+      inspections: 17,
+      totalCost: '$127,340',
+      avgCost: '$2,710',
+      emergencyRatio: '23%'
+    };
+  }
+}
+
+class PredictiveMaintenanceComponent extends DashboardComponent {
+  constructor(id, title, config) {
+    super(id, title, config);
+    this.chart = null;
+  }
+
+  render() {
+    return `
+      <div class="space-y-4">
+        <!-- RUL Prediction Chart -->
+        <div class="chart-container" style="position: relative; height: 160px;">
+          <canvas id="${this.id}-chart"></canvas>
+        </div>
+        
+        <!-- Prediction Summary -->
+        <div class="grid grid-cols-3 gap-3 text-xs">
+          <div class="text-center">
+            <div class="font-bold text-red-600">${this.data?.nextWeek || '5'}</div>
+            <div class="text-gray-600">Next 7 days</div>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-yellow-600">${this.data?.nextMonth || '12'}</div>
+            <div class="text-gray-600">Next 30 days</div>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-blue-600">${this.data?.savings || '23%'}</div>
+            <div class="text-gray-600">Cost savings vs reactive</div>
+          </div>
+        </div>
+        
+        <!-- Model Confidence -->
+        <div class="border-t pt-3">
+          <div class="flex justify-between text-sm mb-1">
+            <span>Model Confidence</span>
+            <span class="font-medium">${this.data?.confidence || '87%'}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-green-600 h-2 rounded-full" style="width: ${this.data?.confidencePercent || '87'}%"></div>
+          </div>
+          <div class="text-xs text-gray-500 mt-1">
+            Based on ${this.data?.dataPoints || '2,847'} historical maintenance events
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  attachEventListeners() {
+    // Create chart after DOM is ready
+    setTimeout(() => {
+      this.createChart();
+    }, 100);
+  }
+  
+  createChart() {
+    const canvas = document.getElementById(`${this.id}-chart`);
+    if (!canvas || this.chart) return;
+    
+    const ctx = canvas.getContext('2d');
+    this.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['L-101', 'L-205', 'L-312', 'L-456', 'L-789'],
+        datasets: [{
+          label: 'Predicted RUL (Heats)',
+          data: [7, 43, 92, 117, 5],
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: function(context) {
+            const value = context.parsed.y;
+            if (value <= 10) return '#ef4444'; // Red for critical
+            if (value <= 30) return '#f59e0b'; // Yellow for warning
+            return '#10b981'; // Green for good
+          },
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 2,
+          pointRadius: 6
+        }, {
+          label: 'Maintenance Threshold',
+          data: [15, 15, 15, 15, 15],
+          borderColor: '#ef4444',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          fill: false,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'RUL Predictions & Maintenance Scheduling',
+            font: {
+              size: 12
+            }
+          },
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              font: {
+                size: 10
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Remaining Heats',
+              font: {
+                size: 10
+              }
+            },
+            ticks: {
+              font: {
+                size: 9
+              }
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Ladle',
+              font: {
+                size: 10
+              }
+            },
+            ticks: {
+              font: {
+                size: 9
+              }
+            }
+          }
+        },
+        elements: {
+          point: {
+            hoverRadius: 8
+          }
+        }
+      }
+    });
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 650));
+    this.data = {
+      nextWeek: 5,
+      nextMonth: 12,
+      savings: '23%',
+      confidence: '87%',
+      confidencePercent: 87,
+      dataPoints: '2,847'
+    };
+  }
+  
+  // Override update method to handle chart properly
+  update() {
+    if (this.element) {
+      // Destroy existing chart before updating
+      if (this.chart) {
+        this.chart.destroy();
+        this.chart = null;
+      }
+      
+      // Update the content
+      const content = this.element.querySelector('.component-content');
+      content.innerHTML = this.render();
+      
+      // Recreate chart
+      this.attachEventListeners();
+    }
+  }
+  
+  destroy() {
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+    super.destroy();
+  }
+}
+
+class PredictiveMaintenanceComponentAdvanced extends DashboardComponent {
+  constructor(id, title, config) {
+    super(id, title, config);
+    this.chart = null;
+  }
+
+  render() {
+    return `
+      <div class="space-y-4">
+        <!-- Advanced RUL Chart -->
+        <div class="chart-container" style="position: relative; height: 160px;">
+          <canvas id="${this.id}-chart"></canvas>
+        </div>
+        
+        <!-- Prediction Summary -->
+        <div class="grid grid-cols-3 gap-3 text-xs">
+          <div class="text-center">
+            <div class="font-bold text-red-600">${this.data?.nextWeek || '5'}</div>
+            <div class="text-gray-600">Next 7 days</div>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-yellow-600">${this.data?.nextMonth || '12'}</div>
+            <div class="text-gray-600">Next 30 days</div>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-blue-600">${this.data?.savings || '23%'}</div>
+            <div class="text-gray-600">Cost savings vs reactive</div>
+          </div>
+        </div>
+        
+        <!-- Model Confidence -->
+        <div class="border-t pt-3">
+          <div class="flex justify-between text-sm mb-1">
+            <span>Model Confidence</span>
+            <span class="font-medium">${this.data?.confidence || '87%'}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-green-600 h-2 rounded-full" style="width: ${this.data?.confidencePercent || '87'}%"></div>
+          </div>
+          <div class="text-xs text-gray-500 mt-1">
+            Based on ${this.data?.dataPoints || '2,847'} historical maintenance events
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  attachEventListeners() {
+    setTimeout(() => {
+      this.createAdvancedChart();
+    }, 100);
+  }
+  
+  createAdvancedChart() {
+    const canvas = document.getElementById(`${this.id}-chart`);
+    if (!canvas || this.chart) return;
+    
+    const ctx = canvas.getContext('2d');
+    this.chart = new Chart(ctx, {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: 'Critical (≤15 heats)',
+          data: [
+            { x: 1, y: 7, ladle: 'L-101' },
+            { x: 5, y: 5, ladle: 'L-789' }
+          ],
+          backgroundColor: '#ef4444',
+          borderColor: '#dc2626',
+          pointRadius: 8
+        }, {
+          label: 'Warning (16-50 heats)',
+          data: [
+            { x: 2, y: 43, ladle: 'L-205' }
+          ],
+          backgroundColor: '#f59e0b',
+          borderColor: '#d97706',
+          pointRadius: 8
+        }, {
+          label: 'Good (>50 heats)',
+          data: [
+            { x: 3, y: 92, ladle: 'L-312' },
+            { x: 4, y: 117, ladle: 'L-456' }
+          ],
+          backgroundColor: '#10b981',
+          borderColor: '#059669',
+          pointRadius: 8
+        }, {
+          label: 'Maintenance Threshold',
+          data: [
+            { x: 0.5, y: 15 },
+            { x: 5.5, y: 15 }
+          ],
+          borderColor: '#ef4444',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          showLine: true,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Predictive Maintenance Schedule',
+            font: { size: 12 }
+          },
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: { font: { size: 10 } }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                if (context.dataset.label === 'Maintenance Threshold') {
+                  return 'Maintenance Threshold: 15 heats';
+                }
+                return `${context.raw.ladle}: ${context.raw.y} heats remaining`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Remaining Heats',
+              font: { size: 10 }
+            },
+            ticks: { font: { size: 9 } }
+          },
+          x: {
+            display: false
+          }
+        }
+      }
+    });
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 650));
+    this.data = {
+      nextWeek: 5,
+      nextMonth: 12,
+      savings: '23%',
+      confidence: '87%',
+      confidencePercent: 87,
+      dataPoints: '2,847'
+    };
+  }
+  
+  update() {
+    if (this.element) {
+      if (this.chart) {
+        this.chart.destroy();
+        this.chart = null;
+      }
+      const content = this.element.querySelector('.component-content');
+      content.innerHTML = this.render();
+      this.attachEventListeners();
+    }
+  }
+  
+  destroy() {
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+    super.destroy();
+  }
+}
+
+
+// =============================================================================
+// ANALYTICS COMPONENTS - Strategic Insights & Performance Analysis
+// =============================================================================
+
+class FleetPerformanceKPIComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="grid grid-cols-2 gap-4">
+        <div class="text-center">
+          <div class="text-2xl font-bold text-green-600">${this.data?.avgCampaignLife || '...'}</div>
+          <div class="text-xs text-gray-600">Avg Campaign Life</div>
+          <div class="text-xs text-gray-500">${this.data?.campaignTrend || '+5%'} vs last quarter</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-blue-600">${this.data?.fleetEfficiency || '...'}%</div>
+          <div class="text-xs text-gray-600">Fleet Efficiency</div>
+          <div class="text-xs text-gray-500">${this.data?.efficiencyTrend || '+2.3%'} vs target</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-purple-600">${this.data?.predictiveAccuracy || '...'}%</div>
+          <div class="text-xs text-gray-600">RUL Accuracy</div>
+          <div class="text-xs text-gray-500">Last 90 days</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-orange-600">${this.data?.costSavings || '...'}%</div>
+          <div class="text-xs text-gray-600">Cost Reduction</div>
+          <div class="text-xs text-gray-500">vs reactive approach</div>
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    this.data = {
+      avgCampaignLife: '118 heats',
+      campaignTrend: '+5%',
+      fleetEfficiency: '87.3',
+      efficiencyTrend: '+2.3%',
+      predictiveAccuracy: '91.2',
+      costSavings: '24.7'
+    };
+  }
+}
+
+class CampaignPerformanceTrendsComponent extends DashboardComponent {
+  constructor(id, title, config) {
+    super(id, title, config);
+    this.chart = null;
+    this.selectedPeriod = '6M';
+  }
+
+  render() {
+    return `
+      <div class="space-y-4">
+        <!-- Performance Trends Chart -->
+        <div class="chart-container" style="position: relative; height: 192px;">
+          <canvas id="${this.id}-chart"></canvas>
+        </div>
+        
+        <!-- Performance Summary -->
+        <div class="grid grid-cols-3 gap-3 text-sm">
+          <div class="text-center">
+            <div class="font-bold text-green-600">${this.data?.topPerformer || 'L-312'}</div>
+            <div class="text-xs text-gray-600">Top Performer</div>
+            <div class="text-xs text-gray-500">${this.data?.topPerformance || '127%'} of expected</div>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-red-600">${this.data?.needsAttention || 'L-101'}</div>
+            <div class="text-xs text-gray-600">Needs Attention</div>
+            <div class="text-xs text-gray-500">${this.data?.poorPerformance || '73%'} of expected</div>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-blue-600">${this.data?.avgPerformance || '94.2%'}</div>
+            <div class="text-xs text-gray-600">Fleet Average</div>
+            <div class="text-xs text-gray-500">Performance ratio</div>
+          </div>
+        </div>
+        
+        <!-- Time Period Selector -->
+        <div class="flex justify-center pt-2">
+          <div class="flex gap-1 text-xs">
+            <button class="period-btn px-2 py-1 ${this.selectedPeriod === '6M' ? 'bg-blue-600 text-white' : 'bg-gray-200'} rounded" data-period="6M">6M</button>
+            <button class="period-btn px-2 py-1 ${this.selectedPeriod === '1Y' ? 'bg-blue-600 text-white' : 'bg-gray-200'} rounded" data-period="1Y">1Y</button>
+            <button class="period-btn px-2 py-1 ${this.selectedPeriod === '2Y' ? 'bg-blue-600 text-white' : 'bg-gray-200'} rounded" data-period="2Y">2Y</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  attachEventListeners() {
+    setTimeout(() => {
+      this.createChart();
+      this.attachPeriodButtons();
+    }, 200);
+  }
+  
+  attachPeriodButtons() {
+    this.element.querySelectorAll('.period-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        this.selectedPeriod = e.target.dataset.period;
+        this.updateChart();
+        this.updateButtonStates();
+      });
+    });
+  }
+  
+  updateButtonStates() {
+    this.element.querySelectorAll('.period-btn').forEach(btn => {
+      if (btn.dataset.period === this.selectedPeriod) {
+        btn.className = 'period-btn px-2 py-1 bg-blue-600 text-white rounded';
+      } else {
+        btn.className = 'period-btn px-2 py-1 bg-gray-200 rounded';
+      }
+    });
+  }
+  
+  createChart() {
+    const canvas = document.getElementById(`${this.id}-chart`);
+    if (!canvas || this.chart) return;
+    
+    const ctx = canvas.getContext('2d');
+    const chartData = this.getChartData(this.selectedPeriod);
+    
+    this.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: chartData.labels,
+        datasets: [
+          {
+            label: 'L-312 (Al2O3-C)',
+            data: chartData.L312,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.4,
+            pointRadius: 4
+          },
+          {
+            label: 'L-205 (MgO-C)',
+            data: chartData.L205,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.4,
+            pointRadius: 4
+          },
+          {
+            label: 'L-101 (MgO-C)',
+            data: chartData.L101,
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.4,
+            pointRadius: 4
+          },
+          {
+            label: 'L-456 (High Alumina)',
+            data: chartData.L456,
+            borderColor: '#8b5cf6',
+            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.4,
+            pointRadius: 4
+          },
+          {
+            label: 'Fleet Average',
+            data: chartData.fleetAvg,
+            borderColor: '#6b7280',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            fill: false,
+            pointRadius: 0
+          },
+          {
+            label: 'Target (100%)',
+            data: Array(chartData.labels.length).fill(100),
+            borderColor: '#f59e0b',
+            backgroundColor: 'transparent',
+            borderWidth: 1,
+            borderDash: [3, 3],
+            fill: false,
+            pointRadius: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: `Campaign Performance Trends (${this.selectedPeriod})`,
+            font: { size: 12 }
+          },
+          legend: {
+            position: 'bottom',
+            labels: { 
+              font: { size: 9 },
+              usePointStyle: true
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 140,
+            title: {
+              display: true,
+              text: 'Performance % (Actual/Expected)',
+              font: { size: 10 }
+            },
+            ticks: { 
+              font: { size: 9 },
+              callback: function(value) {
+                return value + '%';
+              }
+            },
+            grid: {
+              color: function(context) {
+                if (context.tick.value === 100) {
+                  return '#f59e0b'; // Highlight 100% line
+                }
+                return 'rgba(0, 0, 0, 0.1)';
+              }
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Time Period',
+              font: { size: 10 }
+            },
+            ticks: { font: { size: 9 } }
+          }
+        }
+      }
+    });
+  }
+  
+  getChartData(period) {
+    switch (period) {
+      case '6M':
+        return {
+          labels: ['Jul 2024', 'Aug 2024', 'Sep 2024', 'Oct 2024', 'Nov 2024', 'Dec 2024'],
+          L312: [118, 122, 125, 127, 124, 126],  // Best performer
+          L205: [95, 98, 92, 89, 91, 88],        // Declining
+          L101: [85, 82, 78, 75, 73, 70],        // Worst performer
+          L456: [108, 112, 115, 118, 116, 120],  // Strong performer
+          fleetAvg: [101, 103, 102, 102, 101, 101]
+        };
+      
+      case '1Y':
+        return {
+          labels: ['Q1 2024', 'Q2 2024', 'Q3 2024', 'Q4 2024'],
+          L312: [115, 120, 125, 127],
+          L205: [102, 98, 92, 89],
+          L101: [88, 85, 78, 73],
+          L456: [105, 110, 115, 118],
+          fleetAvg: [102, 103, 102, 102]
+        };
+      
+      case '2Y':
+        return {
+          labels: ['2023 H1', '2023 H2', '2024 H1', '2024 H2'],
+          L312: [108, 112, 118, 127],
+          L205: [110, 105, 100, 89],
+          L101: [95, 90, 86, 73],
+          L456: [98, 102, 108, 118],
+          fleetAvg: [103, 102, 103, 102]
+        };
+      
+      default:
+        return this.getChartData('6M');
+    }
+  }
+  
+  updateChart() {
+    if (this.chart) {
+      const chartData = this.getChartData(this.selectedPeriod);
+      
+      // Update chart data
+      this.chart.data.labels = chartData.labels;
+      this.chart.data.datasets[0].data = chartData.L312;
+      this.chart.data.datasets[1].data = chartData.L205;
+      this.chart.data.datasets[2].data = chartData.L101;
+      this.chart.data.datasets[3].data = chartData.L456;
+      this.chart.data.datasets[4].data = chartData.fleetAvg;
+      this.chart.data.datasets[5].data = Array(chartData.labels.length).fill(100);
+      
+      // Update title
+      this.chart.options.plugins.title.text = `Campaign Performance Trends (${this.selectedPeriod})`;
+      
+      this.chart.update();
+    }
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 600));
+    this.data = {
+      topPerformer: 'L-312',
+      topPerformance: '127%',
+      needsAttention: 'L-101',
+      poorPerformance: '73%',
+      avgPerformance: '94.2%'
+    };
+  }
+  
+  update() {
+    if (this.element) {
+      if (this.chart) {
+        this.chart.destroy();
+        this.chart = null;
+      }
+      
+      const content = this.element.querySelector('.component-content');
+      content.innerHTML = this.render();
+      this.attachEventListeners();
+    }
+  }
+  
+  destroy() {
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+    super.destroy();
+  }
+}
+
+class RULPredictionAnalysisComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="space-y-4">
+        <!-- RUL Model Performance -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-3">RUL Model Performance</h4>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="text-center">
+              <div class="text-xl font-bold text-green-600">${this.data?.accuracy || '91.2'}%</div>
+              <div class="text-gray-600">Prediction Accuracy</div>
+            </div>
+            <div class="text-center">
+              <div class="text-xl font-bold text-blue-600">${this.data?.confidence || '87.4'}%</div>
+              <div class="text-gray-600">Avg Confidence</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Model Insights -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">Key Insights</h4>
+          <div class="space-y-2 text-sm">
+            <div class="p-2 bg-green-50 border border-green-200 rounded">
+              <div class="font-medium text-green-800">High Accuracy Period</div>
+              <div class="text-green-600">Model performing 95%+ accuracy in heats 60-100</div>
+            </div>
+            <div class="p-2 bg-yellow-50 border border-yellow-200 rounded">
+              <div class="font-medium text-yellow-800">Early Campaign Uncertainty</div>
+              <div class="text-yellow-600">Lower confidence in first 20 heats - normal behavior</div>
+            </div>
+            <div class="p-2 bg-blue-50 border border-blue-200 rounded">
+              <div class="font-medium text-blue-800">Thermal Integration Impact</div>
+              <div class="text-blue-600">+15% accuracy when thermal data included</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Feature Importance -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">Model Features</h4>
+          <div class="space-y-1 text-xs">
+            <div class="flex justify-between">
+              <span>Max Shell Temperature</span>
+              <span class="font-medium">38.2%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-1">
+              <div class="bg-red-600 h-1 rounded-full" style="width: 38%"></div>
+            </div>
+            
+            <div class="flex justify-between">
+              <span>Hotspot Frequency</span>
+              <span class="font-medium">24.1%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-1">
+              <div class="bg-orange-600 h-1 rounded-full" style="width: 24%"></div>
+            </div>
+            
+            <div class="flex justify-between">
+              <span>Lining Material Type</span>
+              <span class="font-medium">18.7%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-1">
+              <div class="bg-blue-600 h-1 rounded-full" style="width: 19%"></div>
+            </div>
+            
+            <div class="flex justify-between">
+              <span>Maintenance History</span>
+              <span class="font-medium">12.3%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-1">
+              <div class="bg-green-600 h-1 rounded-full" style="width: 12%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 700));
+    this.data = {
+      accuracy: '91.2',
+      confidence: '87.4'
+    };
+  }
+}
+
+class ThermalPatternAnalysisComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="space-y-4">
+        <!-- Thermal Hotspot Chart -->
+        <div class="bg-gray-50 p-4 rounded">
+          <h3 class="text-sm font-medium text-gray-900 mb-3">Thermal Hotspot Frequency by Location</h3>
+          <div id="hotspot-chart-${this.id}" class="space-y-2"></div>
+        </div>
+        
+        <!-- Pattern Insights -->
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <h4 class="font-medium text-gray-900 mb-2">Hotspot Patterns</h4>
+            <div class="space-y-1 text-xs">
+              <div class="flex justify-between">
+                <span>Slagline North</span>
+                <span class="font-bold text-red-600">${this.data?.slaglineNorth || '42%'}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Slagline South</span>
+                <span class="font-bold text-orange-600">${this.data?.slaglineSouth || '28%'}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Bottom Center</span>
+                <span class="font-bold text-yellow-600">${this.data?.bottomCenter || '18%'}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Sidewalls</span>
+                <span class="font-bold text-blue-600">${this.data?.sidewalls || '12%'}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <h4 class="font-medium text-gray-900 mb-2">Temperature Trends</h4>
+            <div class="space-y-1 text-xs">
+              <div>Peak Temp Range: <span class="font-medium">${this.data?.peakRange || '425-485°C'}</span></div>
+              <div>Critical Threshold: <span class="font-medium text-red-600">${this.data?.criticalTemp || '450°C'}</span></div>
+              <div>Fleet Average: <span class="font-medium">${this.data?.fleetAvg || '312°C'}</span></div>
+              <div>Trend Direction: <span class="font-medium ${this.data?.trendClass || 'text-red-600'}">${this.data?.trendDirection || '↗ +2.3°C/month'}</span></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Seasonal Analysis -->
+        <div class="border-t pt-3">
+          <h4 class="font-medium text-gray-900 mb-2">Seasonal Effects</h4>
+          <div class="grid grid-cols-4 gap-2 text-xs text-center">
+            <div>
+              <div class="font-medium">Spring</div>
+              <div class="${this.data?.spring?.class || 'text-green-600'}">${this.data?.spring?.value || '↓ 8°C'}</div>
+            </div>
+            <div>
+              <div class="font-medium">Summer</div>
+              <div class="${this.data?.summer?.class || 'text-red-600'}">${this.data?.summer?.value || '↑ 15°C'}</div>
+            </div>
+            <div>
+              <div class="font-medium">Fall</div>
+              <div class="${this.data?.fall?.class || 'text-yellow-600'}">${this.data?.fall?.value || '↓ 3°C'}</div>
+            </div>
+            <div>
+              <div class="font-medium">Winter</div>
+              <div class="${this.data?.winter?.class || 'text-blue-600'}">${this.data?.winter?.value || '↓ 12°C'}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  renderChart() {
+    const chartContainer = document.getElementById(`hotspot-chart-${this.id}`);
+    if (!chartContainer || !this.data) return;
+
+    const hotspots = [
+      { label: 'Slagline North', value: parseInt(this.data.slaglineNorth), color: 'bg-red-500' },
+      { label: 'Slagline South', value: parseInt(this.data.slaglineSouth), color: 'bg-orange-500' },
+      { label: 'Bottom Center', value: parseInt(this.data.bottomCenter), color: 'bg-yellow-500' },
+      { label: 'Sidewalls', value: parseInt(this.data.sidewalls), color: 'bg-blue-500' }
+    ];
+
+    chartContainer.innerHTML = hotspots.map(spot => `
+      <div class="flex items-center text-xs">
+        <div class="w-20 text-gray-700 text-right mr-3">${spot.label}</div>
+        <div class="flex-1 bg-gray-200 rounded h-4 relative">
+          <div class="${spot.color} h-4 rounded transition-all duration-500" 
+               style="width: ${spot.value}%"></div>
+          <span class="absolute right-2 top-0 h-4 flex items-center text-xs font-medium text-gray-800">
+            ${spot.value}%
+          </span>
+        </div>
+      </div>
+    `).join('');
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 650));
+    this.data = {
+      slaglineNorth: '42%',
+      slaglineSouth: '28%',
+      bottomCenter: '18%',
+      sidewalls: '12%',
+      peakRange: '425-485°C',
+      criticalTemp: '450°C',
+      fleetAvg: '312°C',
+      trendDirection: '↗ +2.3°C/month',
+      trendClass: 'text-red-600',
+      spring: { value: '↓ 8°C', class: 'text-green-600' },
+      summer: { value: '↑ 15°C', class: 'text-red-600' },
+      fall: { value: '↓ 3°C', class: 'text-yellow-600' },
+      winter: { value: '↓ 12°C', class: 'text-blue-600' }
+    };
+    
+    // Render chart after data loads
+    setTimeout(() => this.renderChart(), 100);
+  }
+}
+
+class LiningMaterialAnalysisComponent extends DashboardComponent {
+  render() {
+    if (!this.data?.materials) {
+      return '<div class="text-center text-gray-500">Loading material analysis...</div>';
+    }
+    
+    return `
+      <div class="space-y-4">
+        <!-- Material Performance Comparison -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-3">Lining Material Performance</h4>
+          ${this.data.materials.map(material => `
+            <div class="mb-3">
+              <div class="flex justify-between text-sm mb-1">
+                <span class="font-medium">${material.name}</span>
+                <span class="font-bold">${material.avgLife} heats avg</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-3 relative">
+                <div class="${material.barClass} h-3 rounded-full" style="width: ${material.performance}%"></div>
+                <div class="absolute inset-0 flex items-center justify-center text-xs font-medium">
+                  ${material.performance}% of target
+                </div>
+              </div>
+              <div class="flex justify-between text-xs text-gray-600 mt-1">
+                <span>Cost: ${material.cost}/campaign</span>
+                <span>Campaigns: ${material.campaigns}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        
+        <!-- Recommendations -->
+        <div class="border-t pt-3">
+          <h4 class="font-medium text-gray-900 mb-2">Optimization Opportunities</h4>
+          <div class="space-y-2 text-sm">
+            <div class="p-2 bg-green-50 border border-green-200 rounded">
+              <div class="font-medium text-green-800">MgO-C Optimization</div>
+              <div class="text-green-600">Switch L-205, L-312 to MgO-C for +23% life extension</div>
+            </div>
+            <div class="p-2 bg-blue-50 border border-blue-200 rounded">
+              <div class="font-medium text-blue-800">Cost Opportunity</div>
+              <div class="text-blue-600">Potential $127K annual savings with material optimization</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 750));
+    this.data = {
+      materials: [
+        {
+          name: 'MgO-C (Magnesia-Carbon)',
+          avgLife: 118,
+          performance: 94,
+          barClass: 'bg-green-600',
+          cost: '$45,200',
+          campaigns: 12
+        },
+        {
+          name: 'Al2O3-C (Alumina-Carbon)',
+          avgLife: 95,
+          performance: 86,
+          barClass: 'bg-blue-600',
+          cost: '$38,900',
+          campaigns: 8
+        },
+        {
+          name: 'Dolomite',
+          avgLife: 67,
+          performance: 71,
+          barClass: 'bg-yellow-600',
+          cost: '$29,500',
+          campaigns: 5
+        },
+        {
+          name: 'High Alumina',
+          avgLife: 89,
+          performance: 78,
+          barClass: 'bg-purple-600',
+          cost: '$52,100',
+          campaigns: 3
+        }
+      ]
+    };
+  }
+}
+
+class CostAnalysisComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="space-y-4">
+        <!-- Cost Breakdown Chart -->
+        <div class="bg-gray-50 p-4 rounded">
+          <h3 class="text-sm font-medium text-gray-900 mb-3">Annual Cost Breakdown</h3>
+          <div class="flex items-center justify-center">
+            <div class="relative">
+              <svg width="120" height="120" id="cost-donut-${this.id}">
+                <circle cx="60" cy="60" r="45" fill="none" stroke="#f3f4f6" stroke-width="20"/>
+                <!-- Segments will be added by renderChart -->
+              </svg>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div class="text-center">
+                  <div class="text-lg font-bold text-gray-900">${this.data?.totalCost || '$6.8M'}</div>
+                  <div class="text-xs text-gray-500">Total</div>
+                </div>
+              </div>
+            </div>
+            <div class="ml-6 space-y-2 text-xs">
+              <div class="flex items-center">
+                <div class="w-3 h-3 bg-red-500 rounded mr-2"></div>
+                <span>Reactive (${this.data?.reactivePercent || '34%'})</span>
+              </div>
+              <div class="flex items-center">
+                <div class="w-3 h-3 bg-yellow-500 rounded mr-2"></div>
+                <span>Preventive (${this.data?.preventivePercent || '38%'})</span>
+              </div>
+              <div class="flex items-center">
+                <div class="w-3 h-3 bg-green-500 rounded mr-2"></div>
+                <span>Predictive (${this.data?.predictivePercent || '28%'})</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Cost Metrics -->
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div class="text-center">
+            <div class="text-xl font-bold text-red-600">${this.data?.reactiveCost || '$2.3M'}</div>
+            <div class="text-gray-600">Reactive Costs</div>
+            <div class="text-xs text-gray-500">${this.data?.reactivePercent || '34%'} of total</div>
+          </div>
+          <div class="text-center">
+            <div class="text-xl font-bold text-green-600">${this.data?.savings || '$847K'}</div>
+            <div class="text-gray-600">Annual Savings</div>
+            <div class="text-xs text-gray-500">vs previous year</div>
+          </div>
+        </div>
+        
+        <!-- ROI Analysis -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">System ROI</h4>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span>Thermal Monitoring System:</span>
+              <span class="font-medium">${this.data?.systemCost || '$340K'}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Annual Operating Cost:</span>
+              <span class="font-medium">${this.data?.operatingCost || '$75K'}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Annual Benefit:</span>
+              <span class="font-medium text-green-600">${this.data?.annualBenefit || '$1.2M'}</span>
+            </div>
+            <div class="border-t pt-2 flex justify-between font-bold">
+              <span>Payback Period:</span>
+              <span class="text-green-600">${this.data?.payback || '4.2 months'}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Cost per Heat Analysis -->
+        <div class="border-t pt-3">
+          <h4 class="font-medium text-gray-900 mb-2">Cost per Heat</h4>
+          <div class="grid grid-cols-3 gap-3 text-xs text-center">
+            <div>
+              <div class="font-bold text-red-600">${this.data?.emergencyCostPerHeat || '$2,840'}</div>
+              <div class="text-gray-600">Emergency</div>
+            </div>
+            <div>
+              <div class="font-bold text-yellow-600">${this.data?.preventiveCostPerHeat || '$1,120'}</div>
+              <div class="text-gray-600">Preventive</div>
+            </div>
+            <div>
+              <div class="font-bold text-green-600">${this.data?.predictiveCostPerHeat || '$740'}</div>
+              <div class="text-gray-600">Predictive</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  renderChart() {
+    const svg = document.getElementById(`cost-donut-${this.id}`);
+    if (!svg || !this.data) return;
+
+    const segments = [
+      { percent: parseInt(this.data.reactivePercent), color: '#ef4444' },
+      { percent: parseInt(this.data.preventivePercent), color: '#eab308' },
+      { percent: parseInt(this.data.predictivePercent), color: '#22c55e' }
+    ];
+
+    let currentAngle = -90; // Start at top
+    const radius = 45;
+    const centerX = 60;
+    const centerY = 60;
+    const strokeWidth = 20;
+
+    // Clear existing segments
+    const existingPaths = svg.querySelectorAll('path');
+    existingPaths.forEach(path => path.remove());
+
+    segments.forEach(segment => {
+      const angle = (segment.percent / 100) * 360;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + angle;
+      
+      const startRadians = (startAngle * Math.PI) / 180;
+      const endRadians = (endAngle * Math.PI) / 180;
+      
+      const x1 = centerX + radius * Math.cos(startRadians);
+      const y1 = centerY + radius * Math.sin(startRadians);
+      const x2 = centerX + radius * Math.cos(endRadians);
+      const y2 = centerY + radius * Math.sin(endRadians);
+      
+      const largeArcFlag = angle > 180 ? 1 : 0;
+      
+      const pathData = [
+        `M ${centerX} ${centerY}`,
+        `L ${x1} ${y1}`,
+        `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+        'Z'
+      ].join(' ');
+      
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', pathData);
+      path.setAttribute('fill', segment.color);
+      path.setAttribute('opacity', '0');
+      path.style.transition = 'opacity 0.5s ease';
+      
+      svg.appendChild(path);
+      
+      // Animate in
+      setTimeout(() => {
+        path.setAttribute('opacity', '1');
+      }, 100);
+      
+      currentAngle += angle;
+    });
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 550));
+    this.data = {
+      reactiveCost: '$2.3M',
+      reactivePercent: '34%',
+      preventivePercent: '38%',
+      predictivePercent: '28%',
+      totalCost: '$6.8M',
+      savings: '$847K',
+      systemCost: '$340K',
+      operatingCost: '$75K',
+      annualBenefit: '$1.2M',
+      payback: '4.2 months',
+      emergencyCostPerHeat: '$2,840',
+      preventiveCostPerHeat: '$1,120',
+      predictiveCostPerHeat: '$740'
+    };
+    
+    // Render chart after data loads
+    setTimeout(() => this.renderChart(), 100);
+  }
+}
+
+class ProductionImpactAnalysisComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="space-y-4">
+        <!-- Production Metrics -->
+        <div class="grid grid-cols-2 gap-4 text-center">
+          <div>
+            <div class="text-xl font-bold text-green-600">${this.data?.availability || '96.8'}%</div>
+            <div class="text-sm text-gray-600">Ladle Availability</div>
+            <div class="text-xs text-gray-500">${this.data?.availabilityTrend || '+2.1%'} vs target</div>
+          </div>
+          <div>
+            <div class="text-xl font-bold text-blue-600">${this.data?.downtimeReduction || '34.2'}%</div>
+            <div class="text-sm text-gray-600">Downtime Reduction</div>
+            <div class="text-xs text-gray-500">vs previous year</div>
+          </div>
+        </div>
+        
+        <!-- Downtime Analysis -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">Downtime Breakdown</h4>
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+              <span>Emergency Repairs</span>
+              <span class="font-medium text-red-600">${this.data?.emergencyDowntime || '23 hrs'}</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div class="bg-red-600 h-2 rounded-full" style="width: 35%"></div>
+            </div>
+            
+            <div class="flex justify-between text-sm">
+              <span>Planned Maintenance</span>
+              <span class="font-medium text-yellow-600">${this.data?.plannedDowntime || '42 hrs'}</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div class="bg-yellow-600 h-2 rounded-full" style="width: 65%"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Production Efficiency -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">Efficiency Metrics</h4>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <div>Heats per Day: <span class="font-bold">${this.data?.heatsPerDay || '47.3'}</span></div>
+              <div>Steel Throughput: <span class="font-bold">${this.data?.throughput || '2,840 tons'}</span></div>
+            </div>
+            <div>
+              <div>Campaign Utilization: <span class="font-bold">${this.data?.utilization || '94.1%'}</span></div>
+              <div>Quality Index: <span class="font-bold text-green-600">${this.data?.quality || '98.7%'}</span></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Production Forecast -->
+        <div class="border-t pt-3">
+          <h4 class="font-medium text-gray-900 mb-2">30-Day Forecast</h4>
+          <div class="text-sm space-y-1">
+            <div class="flex justify-between">
+              <span>Expected Heats:</span>
+              <span class="font-medium">${this.data?.expectedHeats || '1,420'}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Predicted Delays:</span>
+              <span class="font-medium text-yellow-600">${this.data?.predictedDelays || '3.2 hrs'}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Confidence Level:</span>
+              <span class="font-medium text-green-600">${this.data?.confidence || '89.3%'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 600));
+    this.data = {
+      availability: '96.8',
+      availabilityTrend: '+2.1%',
+      downtimeReduction: '34.2',
+      emergencyDowntime: '23 hrs',
+      plannedDowntime: '42 hrs',
+      heatsPerDay: '47.3',
+      throughput: '2,840 tons',
+      utilization: '94.1%',
+      quality: '98.7%',
+      expectedHeats: '1,420',
+      predictedDelays: '3.2 hrs',
+      confidence: '89.3%'
+    };
+  }
+}
+
+class DataQualityComponent extends DashboardComponent {
+  render() {
+    return `
+      <div class="space-y-4">
+        <!-- Data Quality Metrics -->
+        <div class="grid grid-cols-2 gap-4 text-center">
+          <div>
+            <div class="text-xl font-bold text-green-600">${this.data?.dataCompleteness || '97.3'}%</div>
+            <div class="text-sm text-gray-600">Data Completeness</div>
+          </div>
+          <div>
+            <div class="text-xl font-bold text-blue-600">${this.data?.sensorUptime || '99.1'}%</div>
+            <div class="text-sm text-gray-600">Sensor Uptime</div>
+          </div>
+        </div>
+        
+        <!-- Data Sources Health -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">Data Sources</h4>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between items-center">
+              <span>Thermal Cameras</span>
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span class="font-medium">${this.data?.thermalCameras || '98.7%'}</span>
+              </div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+              <span>Temperature Sensors</span>
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span class="font-medium">${this.data?.tempSensors || '99.2%'}</span>
+              </div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+              <span>Process Data</span>
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span class="font-medium">${this.data?.processData || '94.5%'}</span>
+              </div>
+            </div>
+            
+            <div class="flex justify-between items-center">
+              <span>Maintenance Logs</span>
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span class="font-medium">${this.data?.maintenanceLogs || '96.1%'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- System Health -->
+        <div>
+          <h4 class="font-medium text-gray-900 mb-2">System Health</h4>
+          <div class="text-sm space-y-1">
+            <div class="flex justify-between">
+              <span>Database Performance:</span>
+              <span class="font-medium text-green-600">${this.data?.dbPerformance || 'Excellent'}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>API Response Time:</span>
+              <span class="font-medium">${this.data?.apiResponse || '127ms'}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Model Processing:</span>
+              <span class="font-medium">${this.data?.modelProcessing || '2.3s avg'}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Storage Utilization:</span>
+              <span class="font-medium">${this.data?.storageUtil || '67%'}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Alerts -->
+        <div class="border-t pt-3">
+          <h4 class="font-medium text-gray-900 mb-2">System Alerts</h4>
+          <div class="text-xs space-y-1">
+            <div class="p-2 bg-yellow-50 border border-yellow-200 rounded">
+              <div class="font-medium text-yellow-800">Storage Warning</div>
+              <div class="text-yellow-600">Thermal image storage at 67% capacity</div>
+            </div>
+            <div class="p-2 bg-green-50 border border-green-200 rounded">
+              <div class="font-medium text-green-800">All Systems Operational</div>
+              <div class="text-green-600">All critical systems running normally</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 450));
+    this.data = {
+      dataCompleteness: '97.3',
+      sensorUptime: '99.1',
+      thermalCameras: '98.7%',
+      tempSensors: '99.2%',
+      processData: '94.5%',
+      maintenanceLogs: '96.1%',
+      dbPerformance: 'Excellent',
+      apiResponse: '127ms',
+      modelProcessing: '2.3s avg',
+      storageUtil: '67%'
+    };
+  }
+}
+
+// =============================================================================
+// BASE CHART COMPONENT SYSTEM
+// =============================================================================
+
+class BaseChartComponent extends DashboardComponent {
+  constructor(id, title, config = {}) {
+    super(id, title, config);
+    this.chart = null;
+    this.chartType = config.chartType || 'line';
+    this.chartConfig = config.chartConfig || {};
+  }
+  
+  render() {
+    return `
+      <div class="chart-container" style="position: relative; height: ${this.config.height || '300px'};">
+        <canvas id="${this.id}-chart"></canvas>
+      </div>
+    `;
+  }
+  
+  attachEventListeners() {
+    // Create chart after DOM is ready
+    setTimeout(() => {
+      this.createChart();
+    }, 100);
+  }
+  
+  createChart() {
+    const canvas = document.getElementById(`${this.id}-chart`);
+    if (!canvas || this.chart) return;
+    
+    const ctx = canvas.getContext('2d');
+    this.chart = new Chart(ctx, {
+      type: this.chartType,
+      data: this.getChartData(),
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        ...this.getChartOptions(),
+        ...this.chartConfig
+      }
+    });
+  }
+  
+  // Override these in child components
+  getChartData() {
+    return { labels: [], datasets: [] };
+  }
+  
+  getChartOptions() {
+    return {};
+  }
+  
+  update() {
+    super.update();
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+  }
+  
+  destroy() {
+    if (this.chart) {
+      this.chart.destroy();
+    }
+    super.destroy();
+  }
+}
+
+// =============================================================================
+// SPECIFIC CHART COMPONENTS
+// =============================================================================
+
+class TemperatureTrendChartComponent extends BaseChartComponent {
+  constructor(id, title, config) {
+    super(id, title, { ...config, chartType: 'line', height: '250px' });
+  }
+  
+  getChartData() {
+    if (!this.data?.temperatureData) return { labels: [], datasets: [] };
+    
+    return {
+      labels: this.data.temperatureData.labels,
+      datasets: [{
+        label: 'Max Shell Temperature',
+        data: this.data.temperatureData.maxTemp,
+        borderColor: '#ef4444',
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4
+      }, {
+        label: 'Average Temperature',
+        data: this.data.temperatureData.avgTemp,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderWidth: 2,
+        fill: false,
+        tension: 0.4
+      }]
+    };
+  }
+  
+  getChartOptions() {
+    return {
+      plugins: {
+        title: {
+          display: true,
+          text: 'Temperature Trends Over Campaign'
+        },
+        legend: {
+          position: 'bottom'
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: false,
+          title: {
+            display: true,
+            text: 'Temperature (°C)'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Heat Number'
+          }
+        }
+      }
+    };
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    this.data = {
+      temperatureData: {
+        labels: ['Heat 75', 'Heat 76', 'Heat 77', 'Heat 78', 'Heat 79', 'Heat 80', 'Heat 81', 'Heat 82', 'Heat 83', 'Heat 84'],
+        maxTemp: [398, 412, 425, 434, 445, 456, 462, 458, 461, 465],
+        avgTemp: [285, 287, 290, 295, 302, 308, 315, 312, 318, 288]
+      }
+    };
+  }
+}
+
+class RULPredictionChartComponent extends BaseChartComponent {
+  constructor(id, title, config) {
+    super(id, title, { ...config, chartType: 'line', height: '250px' });
+  }
+  
+  getChartData() {
+    if (!this.data?.rulData) return { labels: [], datasets: [] };
+    
+    return {
+      labels: this.data.rulData.labels,
+      datasets: [{
+        label: 'Predicted RUL',
+        data: this.data.rulData.predicted,
+        borderColor: '#8b5cf6',
+        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3
+      }, {
+        label: 'Confidence Band Upper',
+        data: this.data.rulData.upperBand,
+        borderColor: 'rgba(139, 92, 246, 0.3)',
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderDash: [5, 5],
+        fill: false,
+        pointRadius: 0
+      }, {
+        label: 'Confidence Band Lower',
+        data: this.data.rulData.lowerBand,
+        borderColor: 'rgba(139, 92, 246, 0.3)',
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderDash: [5, 5],
+        fill: '-1',
+        pointRadius: 0
+      }]
+    };
+  }
+  
+  getChartOptions() {
+    return {
+      plugins: {
+        title: {
+          display: true,
+          text: 'Remaining Useful Life Prediction'
+        },
+        legend: {
+          position: 'bottom'
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Remaining Heats'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Heat Number'
+          }
+        }
+      }
+    };
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 600));
+    this.data = {
+      rulData: {
+        labels: ['Heat 75', 'Heat 76', 'Heat 77', 'Heat 78', 'Heat 79', 'Heat 80', 'Heat 81', 'Heat 82', 'Heat 83', 'Heat 84'],
+        predicted: [45, 42, 38, 34, 29, 24, 19, 14, 10, 7],
+        upperBand: [52, 48, 44, 40, 35, 30, 25, 20, 15, 12],
+        lowerBand: [38, 36, 32, 28, 23, 18, 13, 8, 5, 2]
+      }
+    };
+  }
+}
+
+class MaintenanceCostChartComponent extends BaseChartComponent {
+  constructor(id, title, config) {
+    super(id, title, { ...config, chartType: 'doughnut', height: '250px' });
+  }
+  
+  getChartData() {
+    if (!this.data?.costData) return { labels: [], datasets: [] };
+    
+    return {
+      labels: this.data.costData.labels,
+      datasets: [{
+        data: this.data.costData.values,
+        backgroundColor: [
+          '#ef4444',  // Emergency - Red
+          '#f59e0b',  // Preventive - Yellow
+          '#10b981',  // Predictive - Green
+          '#3b82f6'   // Materials - Blue
+        ],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    };
+  }
+  
+  getChartOptions() {
+    return {
+      plugins: {
+        title: {
+          display: true,
+          text: 'Maintenance Cost Breakdown'
+        },
+        legend: {
+          position: 'bottom'
+        }
+      }
+    };
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 450));
+    this.data = {
+      costData: {
+        labels: ['Emergency Repairs', 'Preventive Maintenance', 'Predictive Actions', 'Materials & Labor'],
+        values: [340000, 180000, 95000, 220000]
+      }
+    };
+  }
+}
+
+class HotspotFrequencyChartComponent extends BaseChartComponent {
+  constructor(id, title, config) {
+    super(id, title, { ...config, chartType: 'bar', height: '250px' });
+  }
+  
+  getChartData() {
+    if (!this.data?.hotspotData) return { labels: [], datasets: [] };
+    
+    return {
+      labels: this.data.hotspotData.labels,
+      datasets: [{
+        label: 'Hotspot Frequency',
+        data: this.data.hotspotData.values,
+        backgroundColor: [
+          '#ef4444',  // Slagline North - Red
+          '#f59e0b',  // Slagline South - Yellow
+          '#3b82f6',  // Bottom Center - Blue
+          '#8b5cf6',  // Sidewall East - Purple
+          '#10b981'   // Sidewall West - Green
+        ],
+        borderWidth: 1,
+        borderColor: '#ffffff'
+      }]
+    };
+  }
+  
+  getChartOptions() {
+    return {
+      plugins: {
+        title: {
+          display: true,
+          text: 'Hotspot Frequency by Location'
+        },
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Number of Hotspots'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Location'
+          }
+        }
+      }
+    };
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 550));
+    this.data = {
+      hotspotData: {
+        labels: ['Slagline North', 'Slagline South', 'Bottom Center', 'Sidewall East', 'Sidewall West'],
+        values: [42, 28, 18, 8, 4]
+      }
+    };
+  }
+}
+
+class CampaignPerformanceChartComponent extends BaseChartComponent {
+  constructor(id, title, config) {
+    super(id, title, { ...config, chartType: 'scatter', height: '250px' });
+  }
+  
+  getChartData() {
+    if (!this.data?.performanceData) return { labels: [], datasets: [] };
+    
+    return {
+      datasets: [{
+        label: 'MgO-C Campaigns',
+        data: this.data.performanceData.mgoC,
+        backgroundColor: '#10b981',
+        borderColor: '#059669',
+        pointRadius: 6
+      }, {
+        label: 'Al2O3-C Campaigns',
+        data: this.data.performanceData.al2o3C,
+        backgroundColor: '#3b82f6',
+        borderColor: '#2563eb',
+        pointRadius: 6
+      }, {
+        label: 'Dolomite Campaigns',
+        data: this.data.performanceData.dolomite,
+        backgroundColor: '#f59e0b',
+        borderColor: '#d97706',
+        pointRadius: 6
+      }]
+    };
+  }
+  
+  getChartOptions() {
+    return {
+      plugins: {
+        title: {
+          display: true,
+          text: 'Campaign Performance: Expected vs Actual Heats'
+        },
+        legend: {
+          position: 'bottom'
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Actual Heats'
+          }
+        },
+        x: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Expected Heats'
+          }
+        }
+      }
+    };
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 650));
+    this.data = {
+      performanceData: {
+        mgoC: [
+          { x: 120, y: 127 },
+          { x: 115, y: 118 },
+          { x: 125, y: 132 },
+          { x: 110, y: 115 }
+        ],
+        al2o3C: [
+          { x: 100, y: 95 },
+          { x: 105, y: 98 },
+          { x: 95, y: 89 },
+          { x: 110, y: 102 }
+        ],
+        dolomite: [
+          { x: 80, y: 67 },
+          { x: 75, y: 72 },
+          { x: 85, y: 78 },
+          { x: 70, y: 65 }
+        ]
+      }
+    };
+  }
+}
+
+class FleetAvailabilityChartComponent extends BaseChartComponent {
+  constructor(id, title, config) {
+    super(id, title, { ...config, chartType: 'line', height: '200px' });
+  }
+  
+  getChartData() {
+    if (!this.data?.availabilityData) return { labels: [], datasets: [] };
+    
+    return {
+      labels: this.data.availabilityData.labels,
+      datasets: [{
+        label: 'Fleet Availability %',
+        data: this.data.availabilityData.values,
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#10b981',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointRadius: 5
+      }]
+    };
+  }
+  
+  getChartOptions() {
+    return {
+      plugins: {
+        title: {
+          display: true,
+          text: 'Fleet Availability Trend'
+        },
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          min: 90,
+          max: 100,
+          title: {
+            display: true,
+            text: 'Availability %'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Date'
+          }
+        }
+      }
+    };
+  }
+  
+  async loadData() {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    this.data = {
+      availabilityData: {
+        labels: ['Dec 14', 'Dec 15', 'Dec 16', 'Dec 17', 'Dec 18', 'Dec 19', 'Dec 20'],
+        values: [94.2, 95.8, 93.1, 96.4, 97.2, 95.9, 96.8]
+      }
+    };
+  }
+}
+
+// =============================================================================
+// ENHANCED PLACEHOLDER COMPONENT WITH CHART SUPPORT
+// =============================================================================
+
+class EnhancedPlaceholderComponent extends DashboardComponent {
+  render() {
+    // Check if this component should render a chart
+    if (this.config.chartType) {
+      return this.renderChart();
+    }
+    
+    // Default placeholder rendering
+    return `
+      <div class="text-center text-gray-500">
+        <div class="text-sm font-medium mb-2">${this.title}</div>
+        <div class="text-xs">Component placeholder</div>
+        ${this.config.query ? `<div class="bg-gray-50 rounded p-2 mt-2 text-xs font-mono text-left">${this.config.query}</div>` : ''}
+      </div>
+    `;
+  }
+  
+  renderChart() {
+    return `
+      <div class="chart-container" style="position: relative; height: ${this.config.height || '200px'};">
+        <canvas id="${this.id}-chart"></canvas>
+      </div>
+    `;
+  }
+  
+  attachEventListeners() {
+    if (this.config.chartType) {
+      setTimeout(() => {
+        this.createChart();
+      }, 100);
+    }
+  }
+  
+  createChart() {
+    if (!this.config.chartType) return;
+    
+    const canvas = document.getElementById(`${this.id}-chart`);
+    if (!canvas || this.chart) return;
+    
+    const ctx = canvas.getContext('2d');
+    this.chart = new Chart(ctx, {
+      type: this.config.chartType,
+      data: this.getChartData(),
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        ...this.getChartOptions()
+      }
+    });
+  }
+  
+  getChartData() {
+    // Sample data based on chart type
+    switch (this.config.chartType) {
+      case 'line':
+        return {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [{
+            label: 'Sample Data',
+            data: [65, 59, 80, 81, 56, 55],
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 2,
+            fill: true
+          }]
+        };
+      
+      case 'bar':
+        return {
+          labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+          datasets: [{
+            label: 'Sample Data',
+            data: [12, 19, 3, 5, 2, 3],
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.6)',
+              'rgba(54, 162, 235, 0.6)',
+              'rgba(255, 205, 86, 0.6)',
+              'rgba(75, 192, 192, 0.6)',
+              'rgba(153, 102, 255, 0.6)',
+              'rgba(255, 159, 64, 0.6)'
+            ],
+            borderWidth: 1
+          }]
+        };
+        
+      case 'pie':
+      case 'doughnut':
+        return {
+          labels: ['Red', 'Blue', 'Yellow'],
+          datasets: [{
+            data: [300, 50, 100],
+            backgroundColor: [
+              '#ef4444',
+              '#3b82f6',
+              '#f59e0b'
+            ]
+          }]
+        };
+        
+      default:
+        return { labels: [], datasets: [] };
+    }
+  }
+  
+  getChartOptions() {
+    return {
+      plugins: {
+        title: {
+          display: true,
+          text: this.title
+        },
+        legend: {
+          position: 'bottom'
+        }
+      }
+    };
+  }
+  
+  update() {
+    super.update();
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+  }
+  
+  destroy() {
+    if (this.chart) {
+      this.chart.destroy();
+    }
+    super.destroy();
+  }
+}
+
+// =============================================================================
+// LAYOUT CONFIGURATIONS
+// =============================================================================
+
+const OVERVIEW_LAYOUT = {
+  subtitle: 'Thermal & RUL Analysis System',
+  gridClass: 'grid-6-col',
+  components: [
+    {
+      type: 'ActiveLadlesComponent',
+      id: 'active-ladles',
+      title: 'Active Ladles',
+      config: { cols: 1, rows: 1 }
+    },
+    {
+      type: 'ActiveCampaignsComponent', 
+      id: 'active-campaigns',
+      title: 'Active Campaigns',
+      config: { cols: 1, rows: 1 }
+    },
+    {
+      type: 'CriticalHotspotsComponent',
+      id: 'critical-hotspots', 
+      title: 'Critical Hotspots',
+      config: { cols: 2, rows: 1 }
+    },
+    {
+      type: 'LowRULAlertsComponent',
+      id: 'low-rul',
+      title: 'Low RUL Alerts',
+      config: { 
+        cols: 2, 
+        rows: 1,
+        query: 'SELECT rul_heats FROM RUL_Predictions WHERE rul_heats < 10'
+      }
+    },
+    {
+      type: 'RULSummaryComponent',
+      id: 'rul-summary',
+      title: 'RUL Summary', 
+      config: { 
+        cols: 3, 
+        rows: 2,
+        query: 'SELECT campaign_id, rul_heats FROM RUL_Predictions ORDER BY rul_heats'
+      }
+    },
+    {
+      type: 'TemperatureTrendChartComponent',
+      id: 'temp-trends',
+      title: 'Temperature Trends',
+      config: { 
+        cols: 3, 
+        rows: 2,
+        query: 'SELECT max_shell_temp_c, scan_timestamp FROM Thermal_Scans'
+      }
+    },
+    {
+      type: 'RecentScansComponent',
+      id: 'recent-scans',
+      title: 'Recent Thermal Scans',
+      config: { 
+        cols: 3, 
+        rows: 2,
+        query: 'SELECT * FROM Thermal_Scans ORDER BY scan_timestamp DESC LIMIT 10'
+      }
+    },
+    {
+      type: 'OperationalCyclesComponent',
+      id: 'operational-cycles',
+      title: 'Operational Cycles',
+      config: { 
+        cols: 3, 
+        rows: 2,
+        query: 'SELECT heat_number, steel_grade FROM Operational_Cycles'
+      }
+    },
+    {
+      type: 'SystemAlertSummaryComponent',
+      id: 'system-alerts',
+      title: 'System Alert Summary',
+      config: { 
+        cols: 6, 
+        rows: 1,
+        query: 'Combined alerts view'
+      }
+    }
+  ]
+};
+
+const CAMPAIGNS_LAYOUT = {
+  subtitle: 'Campaign Management & Analysis',
+  gridClass: 'grid-8-col',
+  components: [
+    {
+      type: 'CampaignSummaryComponent',
+      id: 'campaign-summary',
+      title: 'Campaign Summary',
+      config: { cols: 2, rows: 1 }
+    },
+    {
+      type: 'FleetHealthComponent',
+      id: 'fleet-health',
+      title: 'Fleet Health Score',
+      config: { cols: 2, rows: 1 }
+    },
+    {
+      type: 'NeedsAttentionComponent',
+      id: 'needs-attention',
+      title: 'Needs Attention',
+      config: { cols: 2, rows: 1 }
+    },
+    {
+      type: 'RecentActivityComponent',
+      id: 'recent-activity',
+      title: 'Recent Activity',
+      config: { cols: 2, rows: 1 }
+    },
+    {
+      type: 'CampaignTableComponent',
+      id: 'campaign-table',
+      title: 'Active Campaigns',
+      config: { 
+        cols: 5, 
+        rows: 4,
+        headerActions: '<button class="px-3 py-1 text-xs bg-blue-600 text-white rounded">New Campaign</button>'
+      }
+    },
+    {
+      type: 'CampaignDetailComponent',
+      id: 'campaign-detail',
+      title: 'L-101 Campaign Details',
+      config: { 
+        cols: 3, 
+        rows: 4,
+        headerActions: '<button class="px-2 py-1 text-xs bg-gray-100 rounded">Export</button>'
+      }
+    },
+    {
+      type: 'CampaignPerformanceComponent',
+      id: 'performance-comparison',
+      title: 'Campaign Performance Comparison',
+      config: { cols: 4, rows: 2 }
+    },
+    {
+      type: 'LiningPerformanceComponent',
+      id: 'lining-performance',
+      title: 'Lining Performance',
+      config: { cols: 2, rows: 2 }
+    },
+    {
+      type: 'PredictiveAlertsComponent',
+      id: 'predictive-alerts',
+      title: 'Predictive Alerts',
+      config: { cols: 2, rows: 2 }
+    }
+  ]
+};
+
+const THERMAL_LAYOUT = {
+  subtitle: 'Thermal Image Analysis & Hotspot Monitoring',
+  gridClass: 'grid-8-col',
+  components: [
+    {
+      type: 'ThermalScanSummaryComponent',
+      id: 'thermal-scan-summary',
+      title: 'Today\'s Scans',
+      config: { cols: 2, rows: 1 }
+    },
+    {
+      type: 'CriticalHotspotsCountComponent',
+      id: 'critical-hotspots-count',
+      title: 'Critical Hotspots',
+      config: { cols: 2, rows: 1 }
+    },
+    {
+      type: 'AvgTemperatureComponent',
+      id: 'avg-temperature',
+      title: 'Avg Temperature',
+      config: { cols: 2, rows: 1 }
+    },
+    {
+      type: 'ScanCoverageComponent',
+      id: 'scan-coverage',
+      title: 'Scan Coverage',
+      config: { cols: 2, rows: 1 }
+    },
+    {
+      type: 'ThermalImageViewerComponent',
+      id: 'thermal-image-viewer',
+      title: 'Thermal Image: L-101 Heat #84',
+      config: { 
+        cols: 3, 
+        rows: 3,
+        headerActions: '<select class="text-xs border rounded px-2 py-1"><option>L-101 - Heat #84</option><option>L-101 - Heat #83</option><option>L-205 - Heat #67</option></select>'
+      }
+    },
+    {
+      type: 'ScanDetailsComponent',
+      id: 'scan-details',
+      title: 'Scan Details',
+      config: { cols: 2, rows: 1 }
+    },
+    {
+      type: 'HotspotListComponent',
+      id: 'hotspot-list',
+      title: 'Detected Hotspots',
+      config: { cols: 3, rows: 2 }
+    },
+    {
+      type: 'ThermalScanTableComponent',
+      id: 'thermal-scan-table',
+      title: 'Recent Thermal Scans',
+      config: { 
+        cols: 5, 
+        rows: 3,
+        headerActions: '<select class="text-xs border rounded px-2 py-1"><option>All Ladles</option><option>L-101 Only</option><option>Critical Only</option></select>'
+      }
+    },
+    {
+      type: 'ThermalTrendsComponent',
+      id: 'thermal-trends',
+      title: 'Temperature Trends',
+      config: { cols: 3, rows: 2 }
+    },
+    {
+      type: 'HotspotAnalysisComponent',
+      id: 'hotspot-analysis',
+      title: 'Hotspot Analysis',
+      config: { cols: 4, rows: 2 }
+    },
+    {
+      type: 'ThermalHealthScoreComponent',
+      id: 'thermal-health-score',
+      title: 'Thermal Health Score',
+      config: { cols: 4, rows: 2 }
+    }
+  ]
+};
+
+const MAINTENANCE_LAYOUT = {
+  subtitle: 'Maintenance Planning & Work Order Management',
+  gridClass: 'grid-8-col',
+  components: [
+    {
+      type: 'MaintenanceOverviewComponent',
+      id: 'maintenance-overview',
+      title: 'Maintenance Overview',
+      config: { cols: 2, rows: 1 }
+    },
+    {
+      type: 'UpcomingMaintenanceComponent',
+      id: 'upcoming-maintenance',
+      title: 'Upcoming Maintenance',
+      config: { cols: 3, rows: 2 }
+    },
+    {
+      type: 'ActiveWorkOrdersComponent',
+      id: 'active-work-orders',
+      title: 'Active Work Orders',
+      config: { cols: 3, rows: 2 }
+    },
+    {
+      type: 'MaintenancePlannerComponent',
+      id: 'maintenance-planner',
+      title: 'Maintenance Planner',
+      config: { cols: 2, rows: 3 }
+    },
+    {
+      type: 'MaintenanceHistoryTableComponent',
+      id: 'maintenance-history-table',
+      title: 'Maintenance History',
+      config: { 
+        cols: 4, 
+        rows: 3,
+        headerActions: '<select class="text-xs border rounded px-2 py-1"><option>Last 30 days</option><option>This Month</option><option>All Time</option></select>'
+      }
+    },
+    {
+      type: 'MaintenanceDetailComponent',
+      id: 'maintenance-detail',
+      title: 'Maintenance Details',
+      config: { 
+        cols: 2, 
+        rows: 3,
+        headerActions: '<button class="px-2 py-1 text-xs bg-gray-100 rounded">Export</button>'
+      }
+    },
+    {
+      type: 'MaintenanceMetricsComponent',
+      id: 'maintenance-metrics',
+      title: 'Maintenance Metrics',
+      config: { cols: 3, rows: 2 }
+    },
+    {
+      type: 'PredictiveMaintenanceComponent',
+      id: 'predictive-maintenance',
+      title: 'Predictive Analytics',
+      config: { cols: 3, rows: 2 }
+    }
+  ]
+};
+
+const ANALYTICS_LAYOUT = {
+  subtitle: 'Strategic Analytics & Performance Insights',
+  gridClass: 'grid-8-col',
+  components: [
+    {
+      type: 'FleetPerformanceKPIComponent',
+      id: 'fleet-performance-kpi',
+      title: 'Fleet Performance KPIs',
+      config: { cols: 2, rows: 1 }
+    },
+    {
+      type: 'CampaignPerformanceTrendsComponent',
+      id: 'campaign-performance-trends',
+      title: 'Campaign Performance Trends',
+      config: { cols: 3, rows: 2 }
+    },
+    {
+      type: 'RULPredictionAnalysisComponent',
+      id: 'rul-prediction-analysis',
+      title: 'RUL Prediction Analysis',
+      config: { cols: 3, rows: 3 }
+    },
+    {
+      type: 'ThermalPatternAnalysisComponent',
+      id: 'thermal-pattern-analysis',
+      title: 'Thermal Pattern Analysis',
+      config: { cols: 3, rows: 3 }
+    },
+    {
+      type: 'LiningMaterialAnalysisComponent',
+      id: 'lining-material-analysis',
+      title: 'Lining Material Analysis',
+      config: { cols: 2, rows: 3 }
+    },
+    {
+      type: 'CostAnalysisComponent',
+      id: 'cost-analysis',
+      title: 'Cost Analysis & ROI',
+      config: { cols: 3, rows: 2 }
+    },
+    {
+      type: 'ProductionImpactAnalysisComponent',
+      id: 'production-impact-analysis',
+      title: 'Production Impact Analysis',
+      config: { cols: 3, rows: 2 }
+    },
+    {
+      type: 'DataQualityComponent',
+      id: 'data-quality',
+      title: 'Data Quality & System Health',
+      config: { cols: 2, rows: 2 }
+    }
+  ]
+};
+
+// =============================================================================
+// INITIALIZE DASHBOARD
+// =============================================================================
+
+const dashboard = new DashboardManager();
+
+// Register all component types
+dashboard.registerComponent(ActiveLadlesComponent);
+dashboard.registerComponent(ActiveCampaignsComponent);
+dashboard.registerComponent(CriticalHotspotsComponent);
+dashboard.registerComponent(LowRULAlertsComponent);
+dashboard.registerComponent(RULSummaryComponent);
+dashboard.registerComponent(RecentScansComponent);
+dashboard.registerComponent(OperationalCyclesComponent);
+dashboard.registerComponent(SystemAlertSummaryComponent);
+
+// Register campaign
+dashboard.registerComponent(CampaignSummaryComponent);
+dashboard.registerComponent(FleetHealthComponent);
+dashboard.registerComponent(CampaignTableComponent);
+dashboard.registerComponent(CampaignDetailComponent);
+dashboard.registerComponent(CampaignDetailComponentEnhanced);
+dashboard.registerComponent(PlaceholderComponent);
+dashboard.registerComponent(NeedsAttentionComponent);
+dashboard.registerComponent(RecentActivityComponent);
+dashboard.registerComponent(LiningPerformanceComponent);
+dashboard.registerComponent(CampaignPerformanceComponent);
+dashboard.registerComponent(PredictiveAlertsComponent);
+
+// Register thermal scan components
+dashboard.registerComponent(ThermalScanSummaryComponent);
+dashboard.registerComponent(CriticalHotspotsCountComponent);
+dashboard.registerComponent(AvgTemperatureComponent);
+dashboard.registerComponent(ScanCoverageComponent);
+dashboard.registerComponent(ThermalImageViewerComponent);
+dashboard.registerComponent(ScanDetailsComponent);
+dashboard.registerComponent(HotspotListComponent);
+dashboard.registerComponent(ThermalScanTableComponent);
+dashboard.registerComponent(ThermalTrendsComponent);
+dashboard.registerComponent(HotspotAnalysisComponent);
+dashboard.registerComponent(ThermalHealthScoreComponent);
+
+// Register maintenance components
+dashboard.registerComponent(MaintenanceOverviewComponent);
+dashboard.registerComponent(UpcomingMaintenanceComponent);
+dashboard.registerComponent(ActiveWorkOrdersComponent);
+dashboard.registerComponent(MaintenancePlannerComponent);
+dashboard.registerComponent(MaintenanceHistoryTableComponent);
+dashboard.registerComponent(MaintenanceDetailComponent);
+dashboard.registerComponent(MaintenanceMetricsComponent);
+dashboard.registerComponent(PredictiveMaintenanceComponent);
+
+// Register analytics components
+dashboard.registerComponent(FleetPerformanceKPIComponent);
+dashboard.registerComponent(CampaignPerformanceTrendsComponent);
+dashboard.registerComponent(RULPredictionAnalysisComponent);
+dashboard.registerComponent(ThermalPatternAnalysisComponent);
+dashboard.registerComponent(LiningMaterialAnalysisComponent);
+dashboard.registerComponent(CostAnalysisComponent);
+dashboard.registerComponent(ProductionImpactAnalysisComponent);
+dashboard.registerComponent(DataQualityComponent);
+
+// Register chart components
+dashboard.registerComponent(TemperatureTrendChartComponent);
+dashboard.registerComponent(RULPredictionChartComponent);
+dashboard.registerComponent(MaintenanceCostChartComponent);
+dashboard.registerComponent(HotspotFrequencyChartComponent);
+dashboard.registerComponent(CampaignPerformanceChartComponent);
+dashboard.registerComponent(FleetAvailabilityChartComponent);
+dashboard.registerComponent(EnhancedPlaceholderComponent);
+
+// Register layouts
+dashboard.registerLayout('overview', OVERVIEW_LAYOUT);
+dashboard.registerLayout('campaigns', CAMPAIGNS_LAYOUT);
+dashboard.registerLayout('thermal', THERMAL_LAYOUT);
+dashboard.registerLayout('maintenance', MAINTENANCE_LAYOUT);
+dashboard.registerLayout('analytics', ANALYTICS_LAYOUT);
+
+// Load the overview layout by default
+dashboard.loadLayout('overview');
+
+// Listen to dashboard events
+dashboard.on('tabChange', (event) => {
+  console.log('Tab changed to:', event.detail.tab);
+});
+
+dashboard.on('campaignSelected', (event) => {
+  console.log('Campaign selected:', event.detail.ladle);
+});
+
+dashboard.on('scanSelected', (event) => {
+  console.log('Thermal scan selected:', event.detail.scanId);
+});
+
+dashboard.on('maintenanceSelected', (event) => {
+  console.log('Maintenance record selected:', event.detail.maintenanceId);
+});
+
+</script>
+
+</body>
+</html>

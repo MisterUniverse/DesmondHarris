@@ -3,35 +3,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Home</title>
-    <link rel="stylesheet" href="css/styles.css" type="text/css" />
+    <title>John Doe - Portfolio</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@v2.15.1/devicon.min.css">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-image: url('images/badass.png');
+            background-size: cover; 
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-color: #000;
+        }
+
+        .glass-panel {
+            background: rgba(10, 10, 20, 0.4); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            border-radius: .5rem;
+        }
+        
+        .text-readable-shadow {
+            text-shadow: 0px 1px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Smooth scrolling behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .project-image {
+        height: 175px; /* You can adjust this value to your liking */
+        width: 100%;
+        object-fit: cover; /* This scales the image to cover the area, cropping as needed */
+        margin-bottom: 1rem; /* Adds some space below the image */
+      }
+    </style>
 </head>
-<body>
-    <div class="desktop">
-        <div class="window">
-            <div class="content">
+<body class="text-white">
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-4 md:p-8">
+
+        <!-- Header & Navigation -->
+        <header class="glass-panel sticky top-4 z-50 flex items-center justify-between p-4 mb-12">
+            <h1 class="text-xl md:text-2xl font-bold text-readable-shadow">
+                <a href="#">🇺🇸</a>
+            </h1>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="#about" class="hover:text-gray-300 transition-colors duration-300">About</a>
+                <a href="#projects" class="hover:text-gray-300 transition-colors duration-300">Projects</a>
+                <a href="#contact" class="hover:text-gray-300 transition-colors duration-300">Contact</a>
+            </nav>
+            <button id="mobile-menu-button" class="md:hidden">
+                <i class="fas fa-bars text-2xl"></i>
+            </button>
+        </header>
+        
+        <!-- Mobile Menu (Hidden by default) -->
+        <div id="mobile-menu" class="hidden md:hidden glass-panel p-4 mb-8">
+            <a href="#about" class="block py-2 text-center hover:bg-black/20 rounded-lg">About</a>
+            <a href="#projects" class="block py-2 text-center hover:bg-black/20 rounded-lg">Projects</a>
+            <a href="#contact" class="block py-2 text-center hover:bg-black/20 rounded-lg">Contact</a>
+        </div>
+
+        <!-- Hero/Intro Section -->
+        <section class="text-center my-24 md:my-32">
+            <h2 class="text-4xl md:text-6xl font-bold mb-4 text-readable-shadow">Desmond Harris</h2>
+            <p class="text-xl md:text-2xl text-gray-200 text-readable-shadow max-w-3xl mx-auto">Software Architect & Process Automation </p>
+        </section>
+
+        <!-- About Me Section -->
+        <section id="about" class="glass-panel p-6 md:p-8 mb-12 scroll-mt-24">
+            <h3 class="text-3xl font-bold mb-4 text-readable-shadow">About Me</h3>
+            <p class="text-gray-200 text-readable-shadow leading-relaxed">
+              I build high performance systems, tear down broken code, and fix what most people won't touch.
+              I have experience in image processing, networking, and SCADA systems. I’ve built apps from scratch and made stubborn hardware play nice across manufacturing, security, and industrial automation.
+              I don’t do trendy frameworks or corporate buzzwords. I solve real problems, never sugarcoat, and get shit done. I love freedom and God bless America.🦅 
+            </p>
+        </section>
+
+        <!-- Projects Section -->
+        <section id="projects" class="mb-12 scroll-mt-24">
+            <h3 class="text-3xl font-bold mb-6 text-readable-shadow pl-2">My Work</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 
-                <span>user@arch:~$ cat aboutme.txt</span><br>
-                <span>=================================</span><br>
-                <span>About Me</span><br>
-                <span>=================================</span><br>
-                <span>Hello, my name is Desmond</span><br>
-                <span></span><br>
-                <span>I work in IT and I am passionate about Free Open Source Software.</span><br>
-                <span></span><br>
-                <span>Check out my work: <a href="projects.html">[Projects]</a></span><br>
-                <span>Stuff I'm in to: <a href="blog.html">[Blog]</a></span><br>
-                <span></span><br>
-				<span>Checkout my <a href="https://github.com/MisterUniverse">[github]</a></span><br>
-                <div id="inputLine">
-                    <span>user@arch:~$ &gt; </span><span id="inputText"></span><div id="cursor"></div>
+                <!-- Project Card 1 -->
+                <div class="glass-panel p-6 flex flex-col group hover:border-white/30 transition-all duration-300">
+                    <h4 class="text-2xl font-bold mb-2 text-readable-shadow"><a href="https://github.com/MisterUniverse/Maxxiene">Maxxiene</a></h4>
+                    <p class="text-gray-300 text-readable-shadow mb-4 flex-grow">Voice Controlled Ai Virtual Assistant</p>
+                    <a href="https://github.com/MisterUniverse/Maxxiene"><img src="images/maxxiene.png" class="project-image"/></a>
+                    <div class="flex items-center justify-between mt-auto">
+                        <a href="https://github.com/MisterUniverse/Maxxiene" class="text-white hover:text-gray-300" aria-label="View Project on GitHub">
+                            <i class="fab fa-github fa-lg"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Project Card 2 -->
+                <div class="glass-panel p-6 flex flex-col group hover:border-white/30 transition-all duration-300">
+                    <h4 class="text-2xl font-bold mb-2 text-readable-shadow"><a href="fatigue/index.html">Thermal Fatigue Monitor</a></h4>
+                    <p class="text-gray-300 text-readable-shadow mb-4 flex-grow">A app for measuring/tracking thermal fatigue in different types of metals. Mainly for ladles</p>
+                    <a href="fatigue/index.html"><img src="images/thermal_fatigue.png" class="project-image"/></a> 
+                    <div class="flex items-center justify-between mt-auto">
+                         <a href="https://github.com/MisterUniverse" class="text-white hover:text-gray-300" aria-label="View Project on GitHub">
+                            <i class="fab fa-github fa-lg"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Project Card 3 -->
+                <div class="glass-panel p-6 flex flex-col group hover:border-white/30 transition-all duration-300">
+                    <h4 class="text-2xl font-bold mb-2 text-readable-shadow"><a href="deadlock/index.html">Livelock</a></h4>
+                    <p class="text-gray-300 text-readable-shadow mb-4 flex-grow">A web-based platform for exploring and analyzing heroes, stats, builds, and meta trends from Valve's new game, Deadlock.</p>
+                    <a href="deadlock/index.html"><img src="images/livelock.png" class="project-image"/></a>
+                     <div class="flex items-center justify-between mt-auto">
+                         <a href="https://github.com/MisterUniverse" class="text-white hover:text-gray-300" aria-label="View Project on GitHub">
+                            <i class="fab fa-github fa-lg"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Project Card 4 -->
+                <div class="glass-panel p-6 flex flex-col group hover:border-white/30 transition-all duration-300">
+                  <h4 class="text-2xl font-bold mb-2 text-readable-shadow"><a href="#">Command & Control System</a></h4>
+                  <p class="text-gray-300 text-readable-shadow mb-4 flex-grow">C2 for doing C2 things</p>
+                  <a href="#"><img src="images/a10.png" class="project-image"/></a>
+                   <div class="flex items-center justify-between mt-auto">
+                       <a href="https://github.com/MisterUniverse" class="text-white hover:text-gray-300" aria-label="View Project on GitHub">
+                          <i class="fab fa-github fa-lg"></i>
+                      </a>
+                  </div>
+              </div>
+
+              <!-- Project Card 5 -->
+              <div class="glass-panel p-6 flex flex-col group hover:border-white/30 transition-all duration-300">
+                <h4 class="text-2xl font-bold mb-2 text-readable-shadow"><a href="#">Kasuagi</a></h4>
+                <p class="text-gray-300 text-readable-shadow mb-4 flex-grow">Secure chat and data sharing</p>
+                <a href="#"><img src="images/uwu.png" class="project-image"/></a>
+                 <div class="flex items-center justify-between mt-auto">
+                     <a href="https://github.com/MisterUniverse" class="text-white hover:text-gray-300" aria-label="View Project on GitHub">
+                        <i class="fab fa-github fa-lg"></i>
+                    </a>
                 </div>
             </div>
-        </div>
+
+            <!-- Project Card 6 -->
+            <div class="glass-panel p-6 flex flex-col group hover:border-white/30 transition-all duration-300">
+              <h4 class="text-2xl font-bold mb-2 text-readable-shadow"><a href="viewer/index.html">Media Viewer</a></h4>
+              <p class="text-gray-300 text-readable-shadow mb-4 flex-grow">Application for playing with images</p>
+              <a href="viewer/index.html"><img src="images/viewer.png" class="project-image"/></a>
+               <div class="flex items-center justify-between mt-auto">
+                   <a href="https://github.com/MisterUniverse" class="text-white hover:text-gray-300" aria-label="View Project on GitHub">
+                      <i class="fab fa-github fa-lg"></i>
+                  </a>
+              </div>
+          </div>
+
+              <!-- Project Card 7 -->
+              <div class="glass-panel p-6 flex flex-col group hover:border-white/30 transition-all duration-300">
+                <h4 class="text-2xl font-bold mb-2 text-readable-shadow"><a href="https://github.com/MisterUniverse/EZModbus">EZModbus</a></h4>
+                <p class="text-gray-300 text-readable-shadow mb-4 flex-grow">A configurable Modbus TCP server, designed for simulating devices and interfacing with SCADA, HMI, and PLC systems.</p>
+                <a href="https://github.com/MisterUniverse/EZModbus"><img src="images/Murica.png" class="project-image"/></a>
+                <div class="flex items-center justify-between mt-auto">
+                    <a href="https://github.com/MisterUniverse/EZModbus" class="text-white hover:text-gray-300" aria-label="View Project on GitHub">
+                        <i class="fab fa-github fa-lg"></i>
+                    </a>
+                </div>
+              </div>
+
+              <!-- Project Card 8 -->
+              <div class="glass-panel p-6 flex flex-col group hover:border-white/30 transition-all duration-300">
+                <h4 class="text-2xl font-bold mb-2 text-readable-shadow"><a href="https://viperimaging.com/product/vipervision-software/">ViperVision</a></h4>
+                <p class="text-gray-300 text-readable-shadow mb-4 flex-grow">Thermal monitoring for critical vessels and infrastructure.</p>
+                <a href="https://viperimaging.com/product/vipervision-software/"><img src="images/viper.png" class="project-image"/></a>
+                <div class="flex items-center justify-between mt-auto">
+                    <a href="https://github.com/MisterUniverse" class="text-white hover:text-gray-300" aria-label="View Project on GitHub">
+                        <i class="fab fa-github fa-lg"></i>
+                    </a>
+                </div>
+              </div>
+
+              <!-- Project Card 9 -->
+              <div class="glass-panel p-6 flex flex-col group hover:border-white/30 transition-all duration-300">
+                <h4 class="text-2xl font-bold mb-2 text-readable-shadow"><a href="drone/drone.html">DIY Drone</a></h4>
+                <p class="text-gray-300 text-readable-shadow mb-4 flex-grow">A DIY drone project</p>
+                <a href="drone/drone.html"><img src="images/drone.png" class="project-image"/></a>
+                <div class="flex items-center justify-between mt-auto">
+                    <a href="#" class="text-white hover:text-gray-300" aria-label="View Project on GitHub">
+                        <i class="fab fa-github fa-lg"></i>
+                    </a>
+                </div>
+              </div>
+
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="glass-panel p-6 md:p-8 text-center scroll-mt-24">
+             <h3 class="text-3xl font-bold mb-4 text-readable-shadow">Get In Touch</h3>
+             <p class="text-gray-200 mb-6 text-readable-shadow max-w-2xl mx-auto">Feel free to shoot me email or look me up on socials</p>
+             <a href="mailto:email@example.com" class="bg-black/20 hover:bg-black/30 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300 inline-block border border-white/30">
+                Say Hello
+             </a>
+             <div class="flex justify-center space-x-6 mt-8">
+                <a href="#" class="text-gray-300 hover:text-white transition-colors duration-300" aria-label="GitHub Profile"><i class="fab fa-github fa-2x"></i></a>
+                <a href="#" class="text-gray-300 hover:text-white transition-colors duration-300" aria-label="LinkedIn Profile"><i class="fab fa-linkedin fa-2x"></i></a>
+                <a href="#" class="text-gray-300 hover:text-white transition-colors duration-300" aria-label="Twitter Profile"><i class="fab fa-twitter fa-2x"></i></a>
+             </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="text-center py-8 mt-8">
+            <p class="text-gray-300 text-sm text-readable-shadow">2025 Desmond Harris.</p>
+        </footer>
+
     </div>
-    <footer>
-       <p class="footer"><a class="copyright" href="uncopyright.html">Uncopyrighted</a> free to use and reuse.</p> 
-    </footer>
+
+    <script>
+        // Simple script to toggle the mobile menu
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Close mobile menu when a link is clicked
+        const mobileMenuLinks = mobileMenu.querySelectorAll('a');
+        mobileMenuLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+    </script>
 </body>
 </html>
